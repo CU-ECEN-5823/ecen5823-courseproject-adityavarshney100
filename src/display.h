@@ -38,13 +38,18 @@
 
 #include "glib.h"
 
-
-// assignment6
 #include "native_gecko.h"
 
-// Added by DOS, as per above
-#define SCHEDULER_SUPPORTS_DISPLAY_UPDATE_EVENT 1
-#define TIMER_SUPPORTS_1HZ_TIMER_EVENT	        1
+#include "graphics.h"
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdarg.h>
+#include <string.h>
+#include "glib.h"
+#include "gpio.h"
+#include "log.h"
+#include "hardware/kit/common/drivers/display.h"
+
 
 // and for gpio
 #include "gpio.h"
@@ -75,11 +80,11 @@ enum display_row {
 // function prototypes
 #if ECEN5823_INCLUDE_DISPLAY_SUPPORT
 void displayInit();
-bool displayUpdate();
+void displayUpdate();
 void displayPrintf(enum display_row row, const char *format, ... );
 #else
 static inline void displayInit() { }
-static inline bool displayUpdate() { return true; }
+static inline void displayUpdate() { return true; }
 static inline void displayPrintf(enum display_row row, const char *format, ... ) { row=row; format=format;}
 #endif
 

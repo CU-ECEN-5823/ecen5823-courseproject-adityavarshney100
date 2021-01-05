@@ -3,7 +3,8 @@
  *
  *  Created on: Jan 1, 2019
  *      Author: Dan Walkes
- *      Edited: Dave Sluiter, Dec 1, 2020
+ *      Edited: Dave Sluiter, Jan 5, 2021, mods to get default file to compile without warnings
+ *              and moved the list of includes to .h file.
  *
  *  Students: There are 3 edits required in this file, 2 edits to function displayInit()
  *            1 edit to function displayUpdate().
@@ -14,16 +15,9 @@
  */
 
 //#define INCLUDE_LOG_DEBUG 1
-#include "graphics.h"
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdarg.h>
-#include <string.h>
-#include "glib.h"
-#include "gpio.h"
-#include "log.h"
+
 #include "display.h"
-#include "hardware/kit/common/drivers/display.h"
+
 
 
 
@@ -209,8 +203,8 @@ void displayInit()
     //           Then uncomment the following line
 	//gpioI2CSensorEnSetOn(); // we need SENSOR_ENABLE=1 which is tied to DISP_ENABLE for the LCD, on all the time now
 	
-#else
-#warning "gpioEnableDisplay is not implemented, please implement in order to use the display"
+//#else
+//#warning "gpioEnableDisplay is not implemented, please implement in order to use the display"
 #endif
 
 	memset(display,0,sizeof(struct display_data));
@@ -224,6 +218,7 @@ void displayInit()
 	}
 
 #if SCHEDULER_SUPPORTS_DISPLAY_UPDATE_EVENT
+
 #if TIMER_SUPPORTS_1HZ_TIMER_EVENT
 
 	  // The BT stack implements timers that we can setup and then have the stack pass back
@@ -235,21 +230,26 @@ void displayInit()
 	  // which this takes place.
 	  // We will get a gecko_evt_hardware_soft_timer_id event back from gecko_wait_event()
 	  // as a result of calling gecko_cmd_hardware_set_soft_timer()
-	  struct gecko_msg_hardware_set_soft_timer_rsp_t     *timer_response;
 
       // Students: Figure out what parameters to pass in to set up a 1 second repeating soft timer
-      //           and uncomment the following line including the required parameters.
-	  //timer_response = gecko_cmd_hardware_set_soft_timer();
+      //           and uncomment the following lines
+
+	  /*
+	  struct gecko_msg_hardware_set_soft_timer_rsp_t     *timer_response;
+
+	  timer_response = gecko_cmd_hardware_set_soft_timer();
 
 	  if (timer_response->result != 0) {
-		  LOG_ERROR("BT soft timer failed to initiate, error code=%d", timer_response->result);
+	  	  LOG_ERROR("BT soft timer failed to initiate, error code=%d", timer_response->result);
 	  }
+      */
 
-#else
-#warning "Timer does not support scheduling 1Hz event.  Please implement for full display support"
+//#else
+//#warning "Timer does not support scheduling 1Hz event.  Please implement for full display support"
 #endif
-#else
-#warning "Display Update event is not implemented in scheduler.  Please implement for display support"
+
+//#else
+//#warning "Display Update event is not implemented in scheduler.  Please implement for display support"
 #endif
 
 
@@ -264,7 +264,7 @@ void displayInit()
  * to prevent charge buildup within the Liquid Crystal Cells.
  * See details in https://www.silabs.com/documents/public/application-notes/AN0048.pdf
  */
-displayUpdate()
+void displayUpdate()
 {
 	struct display_data *display = displayGetData();
 
@@ -278,8 +278,8 @@ displayUpdate()
 	//           Then uncomment the following line.
 	//gpioSetDisplayExtcomin(display->last_extcomin_state_high);
 	
-#else
-#warning "gpioSetDisplayExtcomin is not implemented.  Please implement for display support"
+//#else
+//#warning "gpioSetDisplayExtcomin is not implemented.  Please implement for display support"
 #endif
 
 

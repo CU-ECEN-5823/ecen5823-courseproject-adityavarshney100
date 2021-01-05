@@ -20,12 +20,12 @@ rm -rf .git/ .github/
 
 git init
 
-# add all the files
+# add all the files except files ignored by .gitignore 
 git add .
 
 git commit -m "Initial starter code"
 
-# create a branch called main
+# create a branch called master
 git branch -M master
 
 # set the origin
