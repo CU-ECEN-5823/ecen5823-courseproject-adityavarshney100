@@ -31,7 +31,7 @@ int appMain(gecko_configuration_t *config)
 
   // Students:
   // add a function call to gpioInit() here.
-
+  gpioInit();
 
 
 
@@ -42,12 +42,12 @@ int appMain(gecko_configuration_t *config)
     // LED(s) on for ~1 sec, LED(s) off ~1 sec.
 	delayApproxOneSecond();
 	gpioLed0SetOn();
-	//gpioLed1SetOn();
+	gpioLed1SetOn();
 
 
 	delayApproxOneSecond();
 	gpioLed0SetOff();
-	//gpioLed1SetOff();
+	gpioLed1SetOff();
 
 
   } // while(1)
