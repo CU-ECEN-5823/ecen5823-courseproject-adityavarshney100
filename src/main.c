@@ -1,55 +1,27 @@
 /*
-
-Add your header comment here, name, date, etc. See the Coding style guideline document
-
-*/
+ * main.c
+ *
+ *  Created on: 05-Feb-2021
+ *      Author: aditya.vny95
+ */
 
 
 #include "main.h"
 
-
-static void delayApproxOneSecond(void)
-{
-	/**
-	 * Wait loops are a bad idea in general!  Don't copy this code in future assignments!
-	 * We'll discuss how to do this a better way in the next assignment.
-	 */
-	volatile int i;
-	for (i = 0; i < 3500000; ) {
-		  i=i+1;
-	}
-
-} // delayApproxOneSecond()
-
+SLEEP_EnergyMode_t energy_Mode_Entered;
 
 int appMain(gecko_configuration_t *config)
 {
 
+  gecko_init(config);							// Initialize stack
+  gpioInit();									// Initialize the GPIO
+  init_oscillators();							// Initialize oscillators
+  initLETIMER0();								// Initialize LETIMER0
 
-  // Initialize stack
-  gecko_init(config);
+  while (1)
+  {
+	  if(ENABLE_SLEEPING ==1)					// It controls whether any sleep modes are enabled or not
+		  energy_Mode_Entered=SLEEP_Sleep();	// Sets the system into lowest possible energy mode
+  }
 
-  // Students:
-  // add a function call to gpioInit() here.
-  gpioInit();
-
-
-
-  /* Infinite loop */
-  while (1) {
-
-    // For assignment 1 we want a 50-50 duty cycle:
-    // LED(s) on for ~1 sec, LED(s) off ~1 sec.
-	delayApproxOneSecond();
-	gpioLed0SetOn();
-	gpioLed1SetOn();
-
-
-	delayApproxOneSecond();
-	gpioLed0SetOff();
-	gpioLed1SetOff();
-
-
-  } // while(1)
-
-} // appMain()
+}
