@@ -7,6 +7,9 @@
 
 
 #include "main.h"
+#include "init_app.h"
+#include "log.h"
+#include "em_core.h"
 
 SLEEP_EnergyMode_t energy_Mode_Entered;
 
@@ -17,11 +20,20 @@ int appMain(gecko_configuration_t *config)
   gpioInit();									// Initialize the GPIO
   init_oscillators();							// Initialize oscillators
   initLETIMER0();								// Initialize LETIMER0
+  initApp();
+  logInit();									// Initialize the log to see Prints on terminal
+  InitI2C();									// Initialize the I2C to start I2C communication
+  uint32_t evt=0;
 
   while (1)
   {
-	  if(ENABLE_SLEEPING ==1)					// It controls whether any sleep modes are enabled or not
-		  energy_Mode_Entered=SLEEP_Sleep();	// Sets the system into lowest possible energy mode
+	  if (!events_present())
+	  { 										// no more events
+		  logFlush(); 							// flush the LOG before we sleep
+		  SLEEP_Sleep(); 						// go to lowest energy level
+	  }
+	  evt = get_event(); 						// get 1 event
+	  process_event(evt); 						// handle events
   }
 
 }

@@ -18,13 +18,8 @@
 
 void gpioInit()
 {
-	//GPIO_DriveStrengthSet(LED0_port, gpioDriveStrengthStrongAlternateStrong);
-	GPIO_DriveStrengthSet(LED0_port, gpioDriveStrengthWeakAlternateWeak);
-	GPIO_PinModeSet(LED0_port, LED0_pin, gpioModePushPull, false);
-
-	//GPIO_DriveStrengthSet(LED1_port, gpioDriveStrengthStrongAlternateStrong);
-	GPIO_DriveStrengthSet(LED1_port, gpioDriveStrengthWeakAlternateWeak);
-	GPIO_PinModeSet(LED1_port, LED1_pin, gpioModePushPull, false);
+	GPIO_DriveStrengthSet(Temperature_port, gpioDriveStrengthWeakAlternateWeak);
+	GPIO_PinModeSet(Temperature_port, Temperature_pin, gpioModePushPull, false);
 }
 
 void gpioLed0SetOn()
@@ -46,3 +41,15 @@ void gpioLed1SetOff()
 {
 	GPIO_PinOutClear(LED1_port,LED1_pin);
 }
+
+void TempSensorSetOn()
+{
+	GPIO_PinOutSet(Temperature_port,Temperature_pin);
+}
+
+void TempSensorSetOff()
+{
+	GPIO_PinOutClear(Temperature_port,Temperature_pin);
+}
+
+

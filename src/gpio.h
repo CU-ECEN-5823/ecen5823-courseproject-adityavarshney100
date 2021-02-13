@@ -18,7 +18,8 @@
 #define LED0_pin   4
 #define LED1_port  gpioPortF
 #define LED1_pin   5
-
+#define Temperature_port  gpioPortD
+#define Temperature_pin   9
 
 /*
  * Used to Initiate the GPIO Pins of the board
@@ -56,5 +57,22 @@ void gpioLed1SetOn();
  * Return type: VOID
  */
 void gpioLed1SetOff();
+
+/*
+ * Turns on the Temperature sensor
+ * Parameter: 	None
+ * Return type: VOID
+ */
+void TempSensorSetOn();
+
+/*
+ * Turns off the Temperature sensor
+ * Parameter: 	None
+ * Return type: VOID
+ */
+void TempSensorSetOff();
+
+
+
 
 #endif /* SRC_GPIO_H_ */
