@@ -42,6 +42,11 @@ void writeI2C();
 */
 void readI2C();
 
-
+/*
+ * Calculation for temperature
+ * Return type: VOID
+ * Parameter:	None
+*/
+void Temperature();
 
 #endif /* SRC_I2C_H_ */

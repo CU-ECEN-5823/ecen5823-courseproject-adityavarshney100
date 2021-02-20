@@ -11,6 +11,9 @@ uint8_t write_command[1]={0xF3};			// Temperature measurement command
 uint16_t read_buffer[2];					// The value read from the sensor is stored here
 uint16_t result;							// The value that is received from the sensor is 16 bit
 float temperature;							// Measurement of the final temperature
+I2C_TransferReturn_TypeDef transferstatus;
+I2C_TransferSeq_TypeDef data;
+
 
 void InitI2C()
 {
@@ -26,28 +29,32 @@ void InitI2C()
 	init.i2cMaxFreq=I2C_FREQ_STANDARD_MAX;	// Standard rate setting
 	init.i2cClhr=i2cClockHLRStandard;		// Set to use 4:4 low/high duty cycle
 	I2CSPM_Init(&init);
+	NVIC_EnableIRQ(I2C0_IRQn);
 }
 
 void writeI2C()
 {
-	I2C_TransferSeq_TypeDef data;
 	data.addr = SI7021_ADDRESS;				// Perform a write to device at I2C address 0x80
 	data.flags = I2C_FLAG_WRITE;
 	data.buf[0].data = write_command;		// Write command for temperature measurement
 	data.buf[0].len = 1;					// Length of write command
-	I2CSPM_Transfer(I2C0,&data);			// Perform write transfer operation
+	transferstatus=I2C_TransferInit(I2C0,&data);
 }
 
 void readI2C()
 {
-	I2C_TransferSeq_TypeDef data;
 	data.addr = SI7021_ADDRESS;						// Perform a read from device at I2C address 0x80
 	data.flags = I2C_FLAG_READ;
 	data.buf[0].data = read_buffer;					// Load MSB of read value into read_buffer[0]
 	data.buf[0].len=1;
 	data.buf[1].data = read_buffer;					// Load LSB of read value into read_buffer[1]
 	data.buf[1].len=1;								// Length of read value in bytes
-	I2CSPM_Transfer(I2C0,&data);					// Perform read transfer operation
+	transferstatus=I2C_TransferInit(I2C0,&data);
+
+}
+
+void Temperature()
+{
 	result |= (uint16_t)(read_buffer[0]<<8);		// Load MSB of read value into variable result
 	result |= read_buffer[1];						// Load LSB of read read value into variable result
 

@@ -37,6 +37,7 @@ void initLETIMER0()
 
 	LETIMER_Init(LETIMER0,&init);							// Initializing LEtimer
 	LETIMER_CompareSet(LETIMER0,0,COMP0);					// Set value of COMP0
+	LETIMER_CompareSet(LETIMER0,1,1500);					// Set value of COMP1
 	LETIMER_IntEnable(LETIMER0,LETIMER_IF_COMP0);			// Enable interrupt of COMP0
 	NVIC_EnableIRQ(LETIMER0_IRQn);							// Configure NVIC for LETIMER
 	LETIMER_Enable(LETIMER0,1);								// Enable LETIMER
@@ -45,30 +46,33 @@ void initLETIMER0()
 
 void TimerWaitUs(uint32_t delay_us)
 {
-	uint32_t current_ticks,ticker_max,count;
+	uint32_t current_ticks,ticker_max;
 	uint32_t ticker_us;
 
+	if(delay_us > (LETIMER_PERIOD_MS*1000))					// Condition to check if the delay time can be handled
+	{
+		LOG_ERROR("The delay is greater than the vale which can be handled by LETIMER");
+		delay_us=3000000;									// Maximum possible delay
+	}
 
 	ticker_us=CLK_FREQ * delay_us;
 	ticker_us=ticker_us/1000000;							//Calculate the ticks required in us
 
 	current_ticks=LETIMER_CounterGet(LETIMER0); 			//Get the present value of timer count
 
-	if(current_ticks>ticker_us)
+	ticker_max=current_ticks-ticker_us;
+	if(ticker_max>COMP0)									// Case when timer overflows
 	{
-		count=current_ticks-ticker_us;
-		while(LETIMER_CounterGet(LETIMER0)!=count);
-	}
-	else
-	{
-		ticker_max=LETIMER_CompareGet(LETIMER0,0);
-		while(LETIMER_CounterGet(LETIMER0)!=(ticker_max-(ticker_us-current_ticks)));
+		ticker_us=65535-ticker_max;
+		ticker_max=COMP0-ticker_us;
 	}
 
-	if(delay_us > (LETIMER_PERIOD_MS*1000))								// Condition to check if the delay time can be handled
-	{
-		LOG_ERROR("The delay is greater than the vale which can be handled by LETIMER");
-		return;
-	}
+	LETIMER_CompareSet(LETIMER0,1,ticker_max);
+	LETIMER_IntEnable(LETIMER0,LETIMER_IF_COMP1);			// Enable interrupt for COMP1
 
+}
+
+uint32_t get_timestamp()
+{
+	return timestamp;
 }

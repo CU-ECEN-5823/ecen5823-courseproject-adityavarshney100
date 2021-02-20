@@ -15,6 +15,7 @@
 #define CLK_FREQ (LFACLK_FREQ_HZ/PRESCALER)						// This is the Clock frequency which is calculated by dividing the Low Freq Clock (32,768 OR 1000) by the prescaler value (4 or 1)
 #define COMP0 ((LETIMER_PERIOD_MS * CLK_FREQ)/1000)				// The first Interrupt which turns on the LED
 
+extern uint32_t timestamp;
 /*
  * This function is responsible to initiate the LETIMER. It also starts the LETIMEr clock, sets clock divisor/prescaler, also
  * enables the interrupts COMP0
@@ -29,5 +30,12 @@ void initLETIMER0();
  * Parameter:	delay in microseconds
 */
 void TimerWaitUs(uint32_t us_wait);
+
+/*
+ * Returns timestamp in milliseconds
+ * Return type: returns the timestamp value
+ * Parameter:	none
+*/
+uint32_t get_timestamp();
 
 #endif /* SRC_TIMERS_H_ */

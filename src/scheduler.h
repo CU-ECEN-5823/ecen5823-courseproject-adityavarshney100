@@ -13,10 +13,29 @@
 #include <stdbool.h>
 #include <em_core.h>
 #include "main.h"
+#include "i2c.h"
+
+typedef enum State
+{
+	STATE0_TIMER_WAIT,
+	STATE1_WARMUP,
+	STATE2_TEMP_WAIT,
+	STATE3_READ_WAIT,
+	STATE4_REPORT,
+	MY_NUM_STATES
+}State_t;
+
+typedef enum uint32_t
+{
+	POWER_OFF			= 0X00,
+	WAIT_FOR_POWER_UP	= 0X01,
+	LETIMER0_COMP1		= 0X02,
+	I2C_TRANSFER_DONE	= 0X04
+} Temp_Event_t;
 
 #define ON 1							// Mode to turn on the identifier for the event
 #define OFF 0							// Mode to turn off the identifier for the event
-#define POWERUP_TIME_US 80000			// Time taken by the Temperature sensor to power up
+#define POWERUP_TIME_US 120000			// Time taken by the Temperature sensor to power up
 #define CONVERSION_TIME_US 10800		// Time taken by by the sensor to convert data
 
 
@@ -50,6 +69,25 @@ bool events_present();
 */
 void process_event(uint32_t event);
 
+/*
+ * Set event for power up
+ * Returns: none
+ * Parameter: none
+*/
+void SetEventTempWaitPowerUP();
 
+/*
+ * Set event for COMP1
+ * Returns: none
+ * Parameter: none
+*/
+void SetEventComp1();
+
+/*
+ * Set event for I2C transfer
+ * Returns: none
+ * Parameter: none
+*/
+void SetEventI2CTransferDone();
 
 #endif /* SRC_SCHEDULER_H_ */

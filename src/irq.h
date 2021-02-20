@@ -16,4 +16,12 @@
 */
 void LETIMER0_IRQHandler();
 
+/*
+ * This handler checks for pending I2C interrupt flags,
+ * Return Type:		void
+ * Parameter:		None
+ *
+ */
+void I2C0_IRQHandler();
+
 #endif /* SRC_IRQ_H_ */

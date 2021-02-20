@@ -10,10 +10,11 @@
 #include "retargetserial.h"
 #include "log.h"
 #include <stdbool.h>
-
-
+#include "timers.h"
 
 #if INCLUDE_LOGGING
+
+extern uint32_t timestamp;
 /**
  * @return a timestamp value for the logger, typically based on a free running timer.
  * This will be printed at the beginning of each log message.
@@ -32,12 +33,7 @@ uint32_t loggerGetTimestamp(void)
 	   
     #else
     
-       // Students: You will eventually develop this function letimerMilliseconds()
-       //           and not return 0. This will be the function to call for your graded
-       //           assignments.
-       
-       //return letimerMilliseconds();
-	   return (0);
+       return(get_timestamp());
 	   
     #endif
 }
