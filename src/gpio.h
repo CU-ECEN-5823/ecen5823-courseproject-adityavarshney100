@@ -21,6 +21,25 @@
 #define Temperature_port  gpioPortD
 #define Temperature_pin   9
 
+
+#define SensorI2cSCL_port gpioPortC
+#define SensorI2cSCL_pin  10
+/**
+ * See alternate functionality table entry for PC10 in part
+ * datasheet at https://www.silabs.com/documents/login/data-sheets/efr32bg13-datasheet.pdf
+ */
+#define SensorI2cSCL_location 14
+
+/**
+ * See alternate functionality table entry for PC11 in part
+ * datasheet at https://www.silabs.com/documents/login/data-sheets/efr32bg13-datasheet.pdf
+ */
+#define SensorI2cSDA_port gpioPortC
+#define SensorI2cSDA_pin  11
+#define SensorI2cSDA_location 16
+
+
+
 /*
  * Used to Initiate the GPIO Pins of the board
  * Parameter: 	None
@@ -72,6 +91,9 @@ void TempSensorSetOn();
  */
 void TempSensorSetOff();
 
+
+void gpioI2cSDADisable();
+void gpioI2cSCLDisable();
 
 
 

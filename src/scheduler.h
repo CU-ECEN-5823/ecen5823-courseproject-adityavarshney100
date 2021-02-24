@@ -14,6 +14,9 @@
 #include <em_core.h>
 #include "main.h"
 #include "i2c.h"
+// DOS
+#include "gpio.h"
+
 
 typedef enum State
 {
