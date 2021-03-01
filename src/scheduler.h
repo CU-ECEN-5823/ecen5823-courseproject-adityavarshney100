@@ -14,7 +14,6 @@
 #include <em_core.h>
 #include "main.h"
 #include "i2c.h"
-// DOS
 #include "gpio.h"
 
 
@@ -25,7 +24,7 @@ typedef enum State
 	STATE2_TEMP_WAIT,
 	STATE3_READ_WAIT,
 	STATE4_REPORT,
-	MY_NUM_STATES
+	//MY_NUM_STATES
 }State_t;
 
 typedef enum uint32_t
@@ -70,7 +69,7 @@ bool events_present();
  * Returns: the event
  * Parameter: Event to be processed
 */
-void process_event(uint32_t event);
+void process_event(struct gecko_cmd_packet *event);
 
 /*
  * Set event for power up

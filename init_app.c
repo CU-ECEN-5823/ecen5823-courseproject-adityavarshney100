@@ -38,12 +38,6 @@ void initApp(void)
   I2CSPM_Init(&i2cInit);
 #endif // HAL_I2CSENSOR_ENABLE
 
-
-#if defined(HAL_VCOM_ENABLE)
-  // Enable VCOM if requested
-  GPIO_PinModeSet(BSP_VCOM_ENABLE_PORT, BSP_VCOM_ENABLE_PIN, gpioModePushPull, HAL_VCOM_ENABLE);
-#endif // HAL_VCOM_ENABLE
-
 #if defined(HAL_I2CSENSOR_ENABLE) || defined(HAL_SPIDISPLAY_ENABLE)
 #if HAL_I2CSENSOR_ENABLE || HAL_SPIDISPLAY_ENABLE
 #define DISPLAY_SENSOR_COMMON_ENABLE 1

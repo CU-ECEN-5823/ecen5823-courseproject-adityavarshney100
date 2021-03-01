@@ -8,21 +8,20 @@
 #include "irq.h"
 #include <time.h>
 extern I2C_TransferReturn_TypeDef transferstatus;
-uint32_t timestamp = 0; // DOS: initialize to 0
-int      rollover  = 0; // DOS: initialize to 0
+uint32_t timestamp = 0;
+int      rollover  = 0;
 
 
 
 
 void I2C0_IRQHandler()
 {
-	// DOS: these take way tooooooo looooong, LOG_INFO("in IRQ\n");
 	transferstatus=I2C_Transfer(I2C0);						// TO check if the transfer has successfully happened
 	if(transferstatus == i2cTransferDone)
 	{
 		CORE_DECLARE_IRQ_STATE;
 		CORE_ENTER_CRITICAL();								// Enter the critical mode
-		SetEventI2CTransferDone();					// Set the identifier for the event
+		SetEventI2CTransferDone();							// Set the identifier for the event
 		CORE_EXIT_CRITICAL();								// Exit the critical mode
 	}
 }
@@ -40,9 +39,7 @@ void LETIMER0_IRQHandler()
 		CORE_ENTER_CRITICAL();												// Enter the critical mode
 		SetEventTempWaitPowerUP();											// Set the identifier for the event
 		CORE_EXIT_CRITICAL();												// Exit the critical mode
-//DOS		uint32_t n = (rollover*COMP0)-LETIMER_CounterGet(LETIMER0);			// Get timer count
-//DOS		timestamp=(n*1000)/CLK_FREQ;										// Return Timestamp in ms
-		timestamp = timestamp + (rollover * COMP0); // new ts = current ts + rollover amount
+		timestamp = timestamp + COMP0; //
 	}
 	if(value & LETIMER_IF_COMP1)
 	{

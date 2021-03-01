@@ -46,29 +46,43 @@ void writeI2C()
 
 void readI2C()
 {
-	InitI2C();									// Initialize the I2C to start I2C communication
+	InitI2C();										// Initialize the I2C to start I2C communication
 
 	data.addr = SI7021_ADDRESS;						// Perform a read from device at I2C address 0x80
 	data.flags = I2C_FLAG_READ;
 	data.buf[0].data = &read_buffer[0];				// Load MSB of read value into read_buffer[0]
-// DOS: bug:	data.buf[0].len=1;
-	data.buf[0].len=2; // read 2 bytes
-	// data.buf[1] is only used for FLAG_WRITE_READ and FLAG_WRITE_WRITE transfers. I talked about
-    // in lecture.
-//	data.buf[1].data = read_buffer;					// Load LSB of read value into read_buffer[1]
-//	data.buf[1].len=1;								// Length of read value in bytes
+	data.buf[0].len=2; 								// read 2 bytes
 	transferstatus=I2C_TransferInit(I2C0, &data);
 
 }
 
+void DisableI2C()
+{
+	NVIC_DisableIRQ(I2C0_IRQn);								// Disable NVIC IRQ
+	I2C_Enable(I2C0,false);
+	GPIO_PinModeSet(gpioPortC, 10, gpioModeDisabled, 1);	// Disabling the SDA port
+	GPIO_PinModeSet(gpioPortC, 11, gpioModeDisabled, 1);	// Disabling the SDL port
+	CMU_ClockEnable(cmuClock_HFPER, false);
+}
+
 void Temperature()
 {
-	result = 0; // DOS: you were not initializing this variable, never rely on the compiler
-	            //      to do this for you!
+	uint8_t TempBuffer[5];							// Store temperature according to HTM format
+	uint8_t flags = 0x00;							// Flags set as 0 for Celsius, no time stamp, no temperature type
+	uint8_t *p = TempBuffer;						// Pointer to HTM temperature buffer needed to cpnvert values to bitstream.
+	result = 0;
 	result |= (uint16_t)(read_buffer[0]<<8);		// Load MSB of read value into variable result
 	result |= read_buffer[1];						// Load LSB of read read value into variable result
 
 	temperature=((175.72*result)/65536.0)-46.85;							// Temperature Calculation
 
 	LOG_INFO("Measured Temperature in Degrees C: %f\n", temperature);		// Log measured temperature
+
+	UINT8_TO_BITSTREAM(p,flags); 					// convert flags to bitstream and append them in HTM temperature data buffer
+
+	temperature=FLT_TO_UINT32(temperature*1000, -3);	// Convert sensor data to Temperature format
+
+	UINT32_TO_BITSTREAM(p,(uint32_t)temperature);				// Convert temperature to bitstream and place it in the HTM temperature data buffer
+
+	gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement, 5, TempBuffer);
 }

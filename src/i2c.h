@@ -14,7 +14,9 @@
 #include "log.h"
 #include <em_i2c.h>
 #include "main.h"
-
+#include "native_gecko.h"
+#include "gatt_db.h"
+#include "infrastructure.h"
 
 #define INCLUDE_LOG_DEBUG 1
 #define SI7021_ADDRESS 0x80							// Address of SI7021 Temperature sensor
@@ -48,5 +50,14 @@ void readI2C();
  * Parameter:	None
 */
 void Temperature();
+
+/*
+ * Disables I2C
+ * Return type: VOID
+ * Parameter:	None
+ *
+ */
+
+void DisableI2C();
 
 #endif /* SRC_I2C_H_ */
