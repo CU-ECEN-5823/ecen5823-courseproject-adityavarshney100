@@ -22,6 +22,7 @@
 #include "scheduler.h"
 #include "i2c.h"
 #include "ble.h"
+#include "display.h"
 
 #define LFXO_FREQ 32768											// LFXO frequency for EM0, EM1, EM2 is 32.768 kHz
 #define ULFRCO_FREQ 1000										// ULFRCO frequency for EM3 and EM4 is 1kHz

@@ -25,6 +25,7 @@ int appMain(gecko_configuration_t *config)
   SLEEP_InitEx (&sleepInitExData);
   logInit();									// Initialize the log to see Prints on terminal
   SLEEP_SleepBlockBegin(sleepEM3);
+  displayInit();
 
   while (1)
   {

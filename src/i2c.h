@@ -17,7 +17,8 @@
 #include "native_gecko.h"
 #include "gatt_db.h"
 #include "infrastructure.h"
-
+#include "display.h"
+#include "ble.h"
 #define INCLUDE_LOG_DEBUG 1
 #define SI7021_ADDRESS 0x80							// Address of SI7021 Temperature sensor
 

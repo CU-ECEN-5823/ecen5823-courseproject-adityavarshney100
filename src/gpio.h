@@ -14,12 +14,14 @@
 #include "em_gpio.h"
 #include <string.h>
 
-#define	LED0_port  gpioPortF
-#define LED0_pin   4
-#define LED1_port  gpioPortF
-#define LED1_pin   5
-#define Temperature_port  gpioPortD
-#define Temperature_pin   9
+#define	LED0_port  			gpioPortF
+#define LED0_pin   			4
+#define LED1_port  			gpioPortF
+#define LED1_pin  			5
+#define Temperature_port 	gpioPortD
+#define Temperature_pin   	9
+#define Display_port 		gpioPortD
+#define Display_pin 		13
 
 
 #define SensorI2cSCL_port gpioPortC
@@ -95,6 +97,7 @@ void TempSensorSetOff();
 void gpioI2cSDADisable();
 void gpioI2cSCLDisable();
 
-
+void gpioDisplayEnable();
+void gpioSetDisplay(bool flag);
 
 #endif /* SRC_GPIO_H_ */

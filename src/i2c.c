@@ -8,14 +8,14 @@
 #include "i2c.h"
 
 uint8_t write_command[1]={0xF3};			// Temperature measurement command
-//DOS should be a 8-bit data type array, uint16_t read_buffer[2];					// The value read from the sensor is stored here
 uint8_t read_buffer[2];					    // The value read from the sensor is stored here
 uint16_t result;							// The value that is received from the sensor is 16 bit
 float temperature;							// Measurement of the final temperature
 I2C_TransferReturn_TypeDef transferstatus;
 I2C_TransferSeq_TypeDef data;
 
-
+extern bool BT_connection;
+extern bool BT_indication;
 void InitI2C()
 {
 	I2CSPM_Init_TypeDef init;
@@ -78,11 +78,18 @@ void Temperature()
 
 	LOG_INFO("Measured Temperature in Degrees C: %f\n", temperature);		// Log measured temperature
 
-	UINT8_TO_BITSTREAM(p,flags); 					// convert flags to bitstream and append them in HTM temperature data buffer
+	if(BT_connection)
+	{
+		displayPrintf(DISPLAY_ROW_TEMPVALUE, "temp:%f", temperature);
+	}
+	if(BT_indication)
+	{
+		UINT8_TO_BITSTREAM(p,flags); 					// convert flags to bit stream and append them in HTM temperature data buffer
 
-	temperature=FLT_TO_UINT32(temperature*1000, -3);	// Convert sensor data to Temperature format
+		temperature=FLT_TO_UINT32(temperature*1000, -3);	// Convert sensor data to Temperature format
 
-	UINT32_TO_BITSTREAM(p,(uint32_t)temperature);				// Convert temperature to bitstream and place it in the HTM temperature data buffer
+		UINT32_TO_BITSTREAM(p,(uint32_t)temperature);				// Convert temperature to bitstream and place it in the HTM temperature data buffer
 
-	gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement, 5, TempBuffer);
+		gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement, 5, TempBuffer);
+	}
 }

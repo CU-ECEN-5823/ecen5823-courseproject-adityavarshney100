@@ -52,19 +52,29 @@ void TempSensorSetOff()
 	GPIO_PinOutClear(Temperature_port,Temperature_pin);
 }
 
-
-// DOS: I created these for my code
-// disable GPIO for SDA
 void gpioI2cSDADisable()
 {
 	GPIO_PinModeSet(SensorI2cSDA_port, SensorI2cSDA_pin, gpioModeDisabled, 0);
 }
 
-// disable GPIO for SCL
 void gpioI2cSCLDisable()
 {
 	GPIO_PinModeSet(SensorI2cSCL_port, SensorI2cSCL_pin, gpioModeDisabled, 0);
 }
 
+void gpioDisplayEnable()
+{
+	GPIO_DriveStrengthSet(Display_port, Display_pin);
+}
 
-
+void gpioSetDisplay(bool flag)
+{
+	if(flag)
+	{
+		GPIO_PinOutSet(Display_port, Display_pin);
+	}
+	else if(!flag)
+	{
+		GPIO_PinOutClear(Display_port, Display_pin);
+	}
+}

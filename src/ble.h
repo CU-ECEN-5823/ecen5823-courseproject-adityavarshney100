@@ -13,6 +13,9 @@
 #include "scheduler.h"
 #include "bg_types.h"
 #include "gatt_db.h"
+#include "display.h"
+#include "i2c.h"
+#include "gecko_ble_errors.h"
 
 #define ADVERTISING_MINIMUM 400 				// Minimum advertising interval. Value in units of 0.625 ms, for 250 ms, 250/0.625 = 400
 #define ADVERTISING_MAXIMUM 400					// Minimum advertising interval. Value in units of 0.625 ms, for 250 ms, 250/0.625 = 400
@@ -21,8 +24,8 @@
 #define CONNECTION_INTERVAL_MAXIMUM 60			// Time = Value x 1.25 ms, for 75 ms, value = 60
 #define SLAVE_LATENCY_MS 300
 #define SLAVE_LATENCY 3							// 300 / 75 = 4 - 1 = 3
-
 #define SUPERVISION_TIMEOUT 50000				// (1 + 300) *(60 * 2) = 45150
+
 
 
 /*
