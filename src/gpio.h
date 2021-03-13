@@ -93,11 +93,32 @@ void TempSensorSetOn();
  */
 void TempSensorSetOff();
 
-
+/*
+ * Disable SDA GPIO
+ * Parameter: 	None
+ * Return type: VOID
+ */
 void gpioI2cSDADisable();
+
+/*
+ * Disable SCL GPIO
+ * Parameter: 	None
+ * Return type: VOID
+ */
 void gpioI2cSCLDisable();
 
+/*
+ * Enable Gecko Display
+ * Parameter: 	None
+ * Return type: VOID
+ */
 void gpioDisplayEnable();
+
+/*
+ * Disable Gecko Display
+ * Parameter: 	flag to clear or set pinout
+ * Return type: VOID
+ */
 void gpioSetDisplay(bool flag);
 
 #endif /* SRC_GPIO_H_ */
