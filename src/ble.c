@@ -22,34 +22,34 @@ uint8_t findServiceInAdvertisement(uint8_t *data, uint8_t len)
 	uint8_t FieldLength;
 	uint8_t FieldType;
 	uint8_t i=0;
-	while(i<len)
+	while(i<len)													// Parse advertisement packet
 	{
 		FieldLength = data[i];
 		FieldType = data[i+1];
-		if(FieldType == 0x02 || FieldType == 0x03)
+		if(FieldType == 0x02 || FieldType == 0x03)					// Partial ($02) or complete ($03) list of 16-bit UUIDs
 		{
-			if(memcmp(&data[i+2],ThermoService,2) == 0)
+			if(memcmp(&data[i+2],ThermoService,2) == 0)				// compare UUID to Health Thermometer service UUID
 			{
 				return 0;
 			}
 		}
-		i=i+FieldLength+1;
+		i=i+FieldLength+1;											// advance to the next AD struct
 	}
 	return 1;
 }
 
-int32_t gattFloat32ToInt(const uint8_t *value_start_little_endian)
+int32_t gattFloat32ToInt(const uint8_t *value_start_little_endian)	// convert IEEE-11073 32-bit float to integer
 {
 	uint8_t signByte = 0;
 	int32_t mantissa;
 	int8_t exponent = (int8_t)value_start_little_endian[4];
-	if(value_start_little_endian[3] & 0x80)
+	if(value_start_little_endian[3] & 0x80)							// sign extend the mantissa value if the mantissa is negative
 	{
 		signByte = 0xFF;
 	}
 	mantissa = (int32_t) (value_start_little_endian[1] << 0) | (value_start_little_endian[2] << 8) |
 			(value_start_little_endian[3] << 16) | (signByte << 24);
-	return (int32_t) (pow(10,exponent)*mantissa);		// value = 10^exponent*mantissa, pow returns a double type
+	return (int32_t) (pow(10,exponent)*mantissa);					// value = 10^exponent*mantissa, pow returns a double type
 }
 
 void handler_ble_event(struct gecko_cmd_packet *evt)
@@ -57,7 +57,7 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 	uint8_t* value;
 	switch(BGLIB_MSG_ID(evt->header))
 		{
-			case gecko_evt_system_boot_id:							// Initializing the gecko ble
+			case gecko_evt_system_boot_id:							  // This boot event is generated when the system boots up after reset
 				if(DEVICE_IS_BLE_SERVER == 1)
 				{
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_advertise_timing(0,ADVERTISING_MINIMUM,ADVERTISING_MAXIMUM,0,0));
@@ -80,25 +80,25 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_discovery_type(le_gap_phy_1m, SCAN_PASSIVE));					// Set 1Mb PHY passive scanning
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_discovery_timing(le_gap_phy_1m, SCAN_INTERVAL, SCAN_WINDOW));	// Setting Scan interval and scan window
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_conn_parameters(CONNECTION_INTERVAL_MINIMUM, CONNECTION_INTERVAL_MAXIMUM, SLAVE_LATENCY, CONNECTION_TIMEOUT));		// Setting default connection parameters for subsequent connections
-					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_discovery(le_gap_phy_1m, le_gap_discover_generic));
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_discovery(le_gap_phy_1m, le_gap_discover_generic));			// Start scanning - looking for thermometer devices
 					State = scanning;
 				}
 			break;
 
-			case gecko_evt_le_gap_scan_response_id:
-				if(evt->data.evt_le_gap_scan_response.packet_type == 0)
+			case gecko_evt_le_gap_scan_response_id:					// This event is generated when an advertisement packet or a scan response is received from a slave
+				if(evt->data.evt_le_gap_scan_response.packet_type == 0)		// Parse advertisement packets
 				{
 					displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Getting scan response");
-					if(findServiceInAdvertisement(&(evt->data.evt_le_gap_scan_response.data.data[0]), evt->data.evt_le_gap_scan_response.data.len) != 0)
+					if(findServiceInAdvertisement(&(evt->data.evt_le_gap_scan_response.data.data[0]), evt->data.evt_le_gap_scan_response.data.len) != 0)		// If a thermometer advertisement is found...
 					{
-						BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_end_procedure());
-						BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_connect(evt->data.evt_le_gap_scan_response.address,evt->data.evt_le_gap_scan_response.address_type, le_gap_phy_1m));
+						BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_end_procedure());				// then stop scanning for a while
+						BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_connect(evt->data.evt_le_gap_scan_response.address,evt->data.evt_le_gap_scan_response.address_type, le_gap_phy_1m));			// and connect to that device
 						State = opening;
 					}
 				}
 				break;
 
-			case gecko_evt_le_connection_opened_id:					// When the connection is opened change the parameters of interval and latency
+			case gecko_evt_le_connection_opened_id:					  // This event is generated when a new connection is established
 
 				if(DEVICE_IS_BLE_SERVER == 1)
 				{
@@ -110,25 +110,25 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 				{
 					displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Connected");
 					displayPrintf(DISPLAY_ROW_BTADDR2, "%x:%x:%x:%x:%x:%x", server_bt_addr[5], server_bt_addr[4], server_bt_addr[3], server_bt_addr[2], server_bt_addr[1], server_bt_addr[0]);
-					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(evt->data.evt_le_connection_opened.connection, 2, (const uint8_t*) ThermoService));
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(evt->data.evt_le_connection_opened.connection, 2, (const uint8_t*) ThermoService));					// Discover Health Thermometer service on the slave device
 					State = discoverServices;
 				}
 
 			break;
 
-			case gecko_evt_gatt_service_id:
+			case gecko_evt_gatt_service_id:							// This event is generated when a new service is discovered
 
-				Properties.thermometerServiceHandle = evt->data.evt_gatt_service.service;
-
-			break;
-
-			case gecko_evt_gatt_characteristic_id:
-
-				Properties.thermometerCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;
+				Properties.thermometerServiceHandle = evt->data.evt_gatt_service.service;		// Save service handle for future reference
 
 			break;
 
-			case gecko_evt_gatt_procedure_completed_id:
+			case gecko_evt_gatt_characteristic_id:					// This event is generated when a new characteristic is discovered
+
+				Properties.thermometerCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;			  // Save characteristic handle for future reference
+
+			break;
+
+			case gecko_evt_gatt_procedure_completed_id:				// This event is generated for various procedure completions, e.g. when a write procedure is completed, or service discovery is completed
 				if(State == discoverServices && Properties.thermometerServiceHandle != SERVICE_HANDLE_INVALID)
 				{
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_characteristics_by_uuid(evt->data.evt_gatt_procedure_completed.connection, Properties.thermometerServiceHandle, 2, (const uint8_t*)ThermoCharacteristic));
@@ -201,13 +201,13 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 
 				break;
 
-			case gecko_evt_gatt_characteristic_value_id:
+			case gecko_evt_gatt_characteristic_value_id:			  // This event is generated when a characteristic value was received e.g. an indication
 
 				value = &(evt->data.evt_gatt_characteristic_value.value.data[0]);
 				Properties.temperature = (value[1] << 0) + (value[2] << 8) + (value[3] << 16);
-				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection));
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection));			// Send confirmation for the indication
 				uint32_t temp;
-				temp = gattFloat32ToInt(evt->data.evt_gatt_characteristic_value.value.data);
+				temp = gattFloat32ToInt(evt->data.evt_gatt_characteristic_value.value.data);														  // Trigger RSSI measurement on the connection
 				displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temp = %d", temp);
 				break;
 
