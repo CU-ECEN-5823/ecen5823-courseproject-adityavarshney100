@@ -20,6 +20,7 @@ void gpioInit()
 {
 	GPIO_DriveStrengthSet(Temperature_port, gpioDriveStrengthWeakAlternateWeak);
 	GPIO_PinModeSet(Temperature_port, Temperature_pin, gpioModePushPull, false);
+	GPIO_PinModeSet(PB0_port, PB0_pin, gpioModeInput, true);
 }
 
 void gpioLed0SetOn()
@@ -77,4 +78,15 @@ void gpioSetDisplay(bool flag)
 	{
 		GPIO_PinOutClear(Display_port, Display_pin);
 	}
+}
+
+void enable_button_interrupt()
+{
+	GPIO_ExtIntConfig(PB0_port, PB0_pin, PB0_pin, true, true, true);
+	NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+}
+
+void disable_button_interrupt()
+{
+	NVIC_DisableIRQ(GPIO_EVEN_IRQn);
 }

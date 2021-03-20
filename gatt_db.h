@@ -23,6 +23,7 @@ extern const struct bg_gattdb_def bg_gattdb_data;
 #define gattdb_intermediate_temperature         31
 #define gattdb_measurement_interval            34
 #define gattdb_valid_range                     36
-#define gattdb_tx_power_level                  39
+#define gattdb_button_state                    39
+#define gattdb_tx_power_level                  43
 
 #endif

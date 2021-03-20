@@ -106,6 +106,11 @@ void SetEventI2CTransferDone()
 	gecko_external_signal(I2C_TRANSFER_DONE);
 }
 
+void schedulerSetEventButtonPress(void)
+{
+	gecko_external_signal(EVT_BUTTON_PRESS);
+}
+
 uint32_t get_event()
 {
 	CORE_DECLARE_IRQ_STATE;

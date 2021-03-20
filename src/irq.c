@@ -10,7 +10,7 @@
 extern I2C_TransferReturn_TypeDef transferstatus;
 uint32_t timestamp = 0;
 int      rollover  = 0;
-
+uint8_t button_state;
 
 
 
@@ -50,3 +50,16 @@ void LETIMER0_IRQHandler()
 	}
 }
 
+void GPIO_EVEN_IRQHandler()
+{
+	GPIO_IntClear(1 << PB0_pin);
+	if(GPIO_PinInGet(PB0_port, PB0_pin)==1)
+	{
+		button_state = 0x00;
+	}
+	else
+	{
+		button_state = 0x01;
+	}
+	schedulerSetEventButtonPress();
+}

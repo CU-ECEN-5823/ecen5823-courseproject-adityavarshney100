@@ -16,6 +16,14 @@ bool BT_connection = false;
 bool BT_indication = false;
 ConnectionState State;
 ConnectionProperties Properties;
+extern uint8_t button_state;
+
+uint8_t connection_handle	= 0;
+int8	bonding_handle 		= -10;	// this value can never be achieved
+uint32	passkey				= 0;
+
+bool bonding 		= false;		// to indicate if bonding complete          bonding_complete
+bool wait_confirm 	= false;		// wait for confirmation
 
 uint8_t findServiceInAdvertisement(uint8_t *data, uint8_t len)
 {
@@ -33,7 +41,7 @@ uint8_t findServiceInAdvertisement(uint8_t *data, uint8_t len)
 				return 0;
 			}
 		}
-		i=i+FieldLength+1;											// advance to the next AD struct
+		i=i+1+FieldLength;											// advance to the next AD struct
 	}
 	return 1;
 }
@@ -60,6 +68,8 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 			case gecko_evt_system_boot_id:							  // This boot event is generated when the system boots up after reset
 				if(DEVICE_IS_BLE_SERVER == 1)
 				{
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_delete_bondings());
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_configure(0x0F, sm_io_capability_displayyesno));
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_set_advertise_timing(0,ADVERTISING_MINIMUM,ADVERTISING_MAXIMUM,0,0));
 				displayPrintf(DISPLAY_ROW_NAME,"%s", "Server");
 				displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Advertising");
@@ -88,7 +98,6 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 			case gecko_evt_le_gap_scan_response_id:					// This event is generated when an advertisement packet or a scan response is received from a slave
 				if(evt->data.evt_le_gap_scan_response.packet_type == 0)		// Parse advertisement packets
 				{
-					displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Getting scan response");
 					if(findServiceInAdvertisement(&(evt->data.evt_le_gap_scan_response.data.data[0]), evt->data.evt_le_gap_scan_response.data.len) != 0)		// If a thermometer advertisement is found...
 					{
 						BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_end_procedure());				// then stop scanning for a while
@@ -100,6 +109,7 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 
 			case gecko_evt_le_connection_opened_id:					  // This event is generated when a new connection is established
 
+				connection_handle = evt->data.evt_le_connection_opened.connection;
 				if(DEVICE_IS_BLE_SERVER == 1)
 				{
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_connection_set_parameters(evt->data.evt_le_connection_opened.connection,CONNECTION_INTERVAL_MINIMUM,CONNECTION_INTERVAL_MAXIMUM,SLAVE_LATENCY,SUPERVISION_TIMEOUT));
@@ -116,11 +126,61 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 
 			break;
 
+			case gecko_evt_sm_bonded_id:
+				LOG_INFO("Bonding Complete");
+				displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Bonded");
+				bonding = true;
+			break;
+
+			case gecko_evt_sm_confirm_passkey_id:
+				LOG_INFO("Confirm Passkey Event");
+				displayPrintf(DISPLAY_ROW_PASSKEY, "Passkey: %d", evt->data.evt_sm_confirm_passkey.passkey);
+				displayPrintf(DISPLAY_ROW_ACTION, "%s", "Confirm with PB0");
+				wait_confirm = true;
+				passkey = evt->data.evt_sm_confirm_passkey.passkey;				// Saving the passkey
+				break;
+
 			case gecko_evt_gatt_service_id:							// This event is generated when a new service is discovered
 
 				Properties.thermometerServiceHandle = evt->data.evt_gatt_service.service;		// Save service handle for future reference
 
 			break;
+
+			case gecko_evt_sm_confirm_bonding_id:
+				LOG_INFO("Bonding Confirmed\n");
+				struct gecko_msg_sm_bonding_confirm_rsp_t	*bonding_confirm_ptr;
+				bonding_confirm_ptr = gecko_cmd_sm_bonding_confirm(evt->data.evt_sm_confirm_bonding.connection, 1);
+				if(bonding_confirm_ptr->result != 0)
+				{
+					LOG_ERROR("non zero error code returned = %x", bonding_confirm_ptr->result);
+				}
+				else
+				{
+					bonding_handle = evt->data.evt_sm_confirm_bonding.bonding_handle;
+				}
+				break;
+
+			case gecko_evt_system_external_signal_id:
+				if(wait_confirm && (evt->data.evt_system_external_signal.extsignals & EVT_BUTTON_PRESS))
+				{
+					struct gecko_msg_sm_passkey_confirm_rsp_t *passkey_confirm_ptr;
+					passkey_confirm_ptr = gecko_cmd_sm_passkey_confirm(connection_handle,1);
+					LOG_INFO("Called: gecko_cmd_sm_passkey_confirm()");
+
+					if(passkey_confirm_ptr->result)
+					{
+						LOG_ERROR("no xer error code by passkey confirm%x", passkey_confirm_ptr->result);
+					}
+					displayPrintf(DISPLAY_ROW_ACTION, "%s", " ");
+					displayPrintf(DISPLAY_ROW_PASSKEY, "%s", " ");
+					wait_confirm = false;
+				}
+				else if(evt->data.evt_system_external_signal.extsignals & EVT_BUTTON_PRESS)
+				{
+					LOG_INFO("Button_State");
+					gecko_cmd_gatt_server_write_attribute_value(gattdb_button_state,0,sizeof(button_state),&button_state);
+				}
+				break;
 
 			case gecko_evt_gatt_characteristic_id:					// This event is generated when a new characteristic is discovered
 
@@ -221,25 +281,47 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 
 			case gecko_evt_le_connection_closed_id:									// steps to perform when the connection is closed
 
+				connection_handle 	= 0;
+				bonding_handle		= -10;		// cannot achieve this value
+				passkey 			= 0;
 				if(DEVICE_IS_BLE_SERVER == 1)
 				{
 				BT_connection = false;
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_delete_bondings());
 				gecko_cmd_system_set_tx_power(0);					// setting tx power to 0 here
-				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));		// start advertising again
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_advertising(0, le_gap_general_discoverable, le_gap_connectable_scannable));// start advertising again
+				enable_button_interrupt();
 				displayPrintf(DISPLAY_ROW_TEMPVALUE, "%s", " ");
 				displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Advertising");
+				displayPrintf(DISPLAY_ROW_ACTION, "%s", " ");
+				displayPrintf(DISPLAY_ROW_PASSKEY, "%s", " ");
 				}
 				else						// Starting to find new devices
 				{
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_discovery(le_gap_phy_1m, le_gap_discover_generic));
 					displayPrintf(DISPLAY_ROW_TEMPVALUE, "%s", " ");
 					displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Discovery");
+					displayPrintf(DISPLAY_ROW_ACTION, "%s", " ");
+					displayPrintf(DISPLAY_ROW_PASSKEY, "%s", " ");
+					State = scanning;
+
 				}
 				break;
 
 			case gecko_evt_hardware_soft_timer_id:
 
 				displayUpdate();
+				break;
+
+			case gecko_evt_sm_bonding_failed_id:
+
+				displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Bonding Failed");
+				displayPrintf(DISPLAY_ROW_PASSKEY, "%d", " ");
+				wait_confirm 	= false;
+				bonding 		= false;
+				bonding_handle 	= -10;	// cannot reach this value
+				passkey 		= 0;
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_le_connection_close(evt->data.evt_sm_bonding_failed.connection));
 				break;
 
 			default:

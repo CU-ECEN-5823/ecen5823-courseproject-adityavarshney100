@@ -22,7 +22,8 @@
 #define Temperature_pin   	9
 #define Display_port 		gpioPortD
 #define Display_pin 		13
-
+#define PB0_port			gpioPortF
+#define PB0_pin				6
 
 #define SensorI2cSCL_port gpioPortC
 #define SensorI2cSCL_pin  10
@@ -120,5 +121,20 @@ void gpioDisplayEnable();
  * Return type: VOID
  */
 void gpioSetDisplay(bool flag);
+
+/*
+ * Enable Button interrupt
+ * Parameter: 	flag to clear or set pinout
+ * Return type: VOID
+ */
+void enable_button_interrupt();
+
+/*
+ * Disable Button interrupt
+ * Parameter: 	flag to clear or set pinout
+ * Return type: VOID
+ */
+void disable_button_interrupt();
+
 
 #endif /* SRC_GPIO_H_ */

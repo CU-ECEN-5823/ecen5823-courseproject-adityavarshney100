@@ -32,7 +32,8 @@ typedef enum uint32_t
 	POWER_OFF			= 0X00,
 	WAIT_FOR_POWER_UP	= 0X01,
 	LETIMER0_COMP1		= 0X02,
-	I2C_TRANSFER_DONE	= 0X04
+	I2C_TRANSFER_DONE	= 0X04,
+	EVT_BUTTON_PRESS	= 0x10
 } Temp_Event_t;
 
 #define ON 1							// Mode to turn on the identifier for the event
@@ -91,5 +92,12 @@ void SetEventComp1();
  * Parameter: none
 */
 void SetEventI2CTransferDone();
+
+/*
+ * Set event for button press
+ * Returns: none
+ * Parameter: none
+*/
+void schedulerSetEventButtonPress(void);
 
 #endif /* SRC_SCHEDULER_H_ */

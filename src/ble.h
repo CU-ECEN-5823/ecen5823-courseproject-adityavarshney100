@@ -17,6 +17,7 @@
 #include "i2c.h"
 #include "gecko_ble_errors.h"
 #include <math.h>
+#include "bg_gattdb_def.h"
 
 #define ADVERTISING_MINIMUM 			400			// Minimum advertising interval. Value in units of 0.625 ms, for 250 ms, 250/0.625 = 400
 #define ADVERTISING_MAXIMUM 			400			// Minimum advertising interval. Value in units of 0.625 ms, for 250 ms, 250/0.625 = 400
@@ -39,6 +40,8 @@
 #define TABLE_INDEX_INVALID				(uint8_t)0xFFu
 
 #define EXT_SIGNAL_PRINT_RESULTS		0x01
+
+//#define gattdb_button_state 			11
 
 typedef enum {
 	scanning,
