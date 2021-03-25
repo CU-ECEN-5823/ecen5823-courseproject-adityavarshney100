@@ -56,9 +56,9 @@ typedef struct{
 	uint8_t 	connectionHandle;
 	int8_t 		rssi;
 	uint16_t	serverAddress;
-	uint32_t	thermometerServiceHandle;
-	uint16_t	thermometerCharacteristicHandle;
-	uint32_t	temperature;
+	uint32_t	pushbuttonServiceHandle;
+	uint16_t	pushbuttonCharacteristicHandle;
+	uint32_t	pushbuttton;
 } ConnectionProperties;
 
 /*

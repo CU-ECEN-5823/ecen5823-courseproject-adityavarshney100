@@ -24,9 +24,12 @@
 #define Display_pin 		13
 #define PB0_port			gpioPortF
 #define PB0_pin				6
-
-#define SensorI2cSCL_port gpioPortC
-#define SensorI2cSCL_pin  10
+#define PB1_port			gpioPortF
+#define PB1_pin				7
+#define Button0_Pressed		0x01
+#define Button1_Pressed		0x10
+#define SensorI2cSCL_port 	gpioPortC
+#define SensorI2cSCL_pin  	10
 /**
  * See alternate functionality table entry for PC10 in part
  * datasheet at https://www.silabs.com/documents/login/data-sheets/efr32bg13-datasheet.pdf

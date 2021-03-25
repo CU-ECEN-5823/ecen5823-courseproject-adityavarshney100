@@ -14,16 +14,24 @@ int8_t rssi;
 extern float temperature;
 bool BT_connection = false;
 bool BT_indication = false;
+uint16_t error = 0;
+
+const uint8_t pushbuttonService[16] = {0x89, 0x62, 0x13, 0x2d, 0x2a, 0x65, 0xec, 0x87, 0x3e, 0x43, 0xc8, 0x38, 0x01, 0x00, 0x00, 0x00};
+const uint8_t pushbuttonChar[16]	= {0x89, 0x62, 0x13, 0x2d, 0x2a, 0x65, 0xec, 0x87, 0x3e, 0x43, 0xc8, 0x38, 0x02, 0x00, 0x00, 0x00};
 ConnectionState State;
 ConnectionProperties Properties;
-extern uint8_t button_state;
+extern uint8_t button0_state;
+extern uint8_t button1_state;
+
 
 uint8_t connection_handle	= 0;
+uint8_t connection1_handle 	= 0;
 int8	bonding_handle 		= -10;	// this value can never be achieved
 uint32	passkey				= 0;
 
 bool bonding 		= false;		// to indicate if bonding complete          bonding_complete
 bool wait_confirm 	= false;		// wait for confirmation
+bool press_1 		= true;
 
 uint8_t findServiceInAdvertisement(uint8_t *data, uint8_t len)
 {
@@ -81,6 +89,8 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 				}
 				else
 				{
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_delete_bondings());
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_configure(0x0F, sm_io_capability_displayyesno));
 					displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Discovering");
 					displayPrintf(DISPLAY_ROW_BTADDR, "%x:%x:%x:%x:%x:%x", gecko_cmd_system_get_bt_address()->address.addr[5],
 											gecko_cmd_system_get_bt_address()->address.addr[4], gecko_cmd_system_get_bt_address()->address.addr[3],
@@ -120,7 +130,7 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 				{
 					displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Connected");
 					displayPrintf(DISPLAY_ROW_BTADDR2, "%x:%x:%x:%x:%x:%x", server_bt_addr[5], server_bt_addr[4], server_bt_addr[3], server_bt_addr[2], server_bt_addr[1], server_bt_addr[0]);
-					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(evt->data.evt_le_connection_opened.connection, 2, (const uint8_t*) ThermoService));					// Discover Health Thermometer service on the slave device
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(evt->data.evt_le_connection_opened.connection, 16, (const uint8_t*) pushbuttonService));					// Discover Health Thermometer service on the slave device
 					State = discoverServices;
 				}
 
@@ -142,7 +152,7 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 
 			case gecko_evt_gatt_service_id:							// This event is generated when a new service is discovered
 
-				Properties.thermometerServiceHandle = evt->data.evt_gatt_service.service;		// Save service handle for future reference
+				Properties.pushbuttonServiceHandle = evt->data.evt_gatt_service.service;		// Save service handle for future reference
 
 			break;
 
@@ -161,53 +171,79 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 				break;
 
 			case gecko_evt_system_external_signal_id:
-				if(wait_confirm && (evt->data.evt_system_external_signal.extsignals & EVT_BUTTON_PRESS))
+				if(DEVICE_IS_BLE_SERVER == 1)
 				{
-					struct gecko_msg_sm_passkey_confirm_rsp_t *passkey_confirm_ptr;
-					passkey_confirm_ptr = gecko_cmd_sm_passkey_confirm(connection_handle,1);
-					LOG_INFO("Called: gecko_cmd_sm_passkey_confirm()");
-
-					if(passkey_confirm_ptr->result)
+					if(wait_confirm && (evt->data.evt_system_external_signal.extsignals & EVT_BUTTON_PRESS))
 					{
-						LOG_ERROR("no xer error code by passkey confirm%x", passkey_confirm_ptr->result);
+						struct gecko_msg_sm_passkey_confirm_rsp_t *passkey_confirm_ptr;
+						passkey_confirm_ptr = gecko_cmd_sm_passkey_confirm(connection_handle,1);
+						LOG_INFO("Called: gecko_cmd_sm_passkey_confirm()");
+
+						if(passkey_confirm_ptr->result)
+						{
+							LOG_ERROR("no xer error code by passkey confirm%x", passkey_confirm_ptr->result);
+						}
+						displayPrintf(DISPLAY_ROW_ACTION, "%s", " ");
+						displayPrintf(DISPLAY_ROW_PASSKEY, "%s", " ");
+						wait_confirm = false;
 					}
-					displayPrintf(DISPLAY_ROW_ACTION, "%s", " ");
-					displayPrintf(DISPLAY_ROW_PASSKEY, "%s", " ");
-					wait_confirm = false;
+					else if(evt->data.evt_system_external_signal.extsignals & EVT_BUTTON_PRESS)
+					{
+						LOG_INFO("Button_State");
+						gecko_cmd_gatt_server_write_attribute_value(gattdb_button_state,0,sizeof(button0_state),&button0_state);
+					}
 				}
-				else if(evt->data.evt_system_external_signal.extsignals & EVT_BUTTON_PRESS)
+				else
 				{
-					LOG_INFO("Button_State");
-					gecko_cmd_gatt_server_write_attribute_value(gattdb_button_state,0,sizeof(button_state),&button_state);
+					if(evt->data.evt_system_external_signal.extsignals & EVT_BUTTON_PRESS)
+					{
+						if((wait_confirm) && (button0_state == Button0_Pressed))
+						{
+							BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_passkey_confirm(connection_handle,1));
+							LOG_INFO("Passkey Confirmed");
+							displayPrintf(DISPLAY_ROW_ACTION, "%s", " ");
+							displayPrintf(DISPLAY_ROW_PASSKEY, "%s", " ");
+						}
+						else if (button1_state == Button1_Pressed)
+						{
+							BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_read_characteristic_value_by_uuid(connection_handle,Properties.pushbuttonServiceHandle, 16, (const uint8_t*) pushbuttonChar));
+						}
+					}
 				}
 				break;
 
 			case gecko_evt_gatt_characteristic_id:					// This event is generated when a new characteristic is discovered
 
-				Properties.thermometerCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;			  // Save characteristic handle for future reference
+				Properties.pushbuttonCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;			  // Save characteristic handle for future reference
 
 			break;
 
 			case gecko_evt_gatt_procedure_completed_id:				// This event is generated for various procedure completions, e.g. when a write procedure is completed, or service discovery is completed
-				if(State == discoverServices && Properties.thermometerServiceHandle != SERVICE_HANDLE_INVALID)
+				if(State == discoverServices && Properties.pushbuttonServiceHandle != SERVICE_HANDLE_INVALID)
 				{
-					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_characteristics_by_uuid(evt->data.evt_gatt_procedure_completed.connection, Properties.thermometerServiceHandle, 2, (const uint8_t*)ThermoCharacteristic));
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_characteristics_by_uuid(connection_handle, Properties.pushbuttonServiceHandle, 16, (const uint8_t*)pushbuttonChar));
 					State = discoverCharacteristics;
 					break;
 				}
-				if(State == discoverCharacteristics && Properties.thermometerCharacteristicHandle != CHARACTERISTIC_HANDLE_INVALID)
+				if(State == discoverCharacteristics && Properties.pushbuttonCharacteristicHandle != CHARACTERISTIC_HANDLE_INVALID)
 				{
-					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_end_procedure());			// discovering stop
+					/*BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_end_procedure());			// discovering stop
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_set_characteristic_notification(evt->data.evt_gatt_procedure_completed.connection, Properties.thermometerCharacteristicHandle, gatt_indication));
 					displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Handling Indications");
-					State = enableIndication;
+					State = enableIndication;*/
+					if(evt->data.evt_gatt_procedure_completed.result == 0x040F)
+					{
+						LOG_INFO("Implemented Security ");
+						gecko_cmd_sm_increase_security(connection_handle);
+						press_1 = false;
+					}
 					break;
 				}
-				if(State == enableIndication)
+				/*if(State == enableIndication)
 				{
 					State = running;
 				}
-				break;
+				break;*/
 
 			case gecko_evt_gatt_server_characteristic_status_id:		// Getting the gatt server status
 
@@ -264,11 +300,20 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 			case gecko_evt_gatt_characteristic_value_id:			  // This event is generated when a characteristic value was received e.g. an indication
 
 				value = &(evt->data.evt_gatt_characteristic_value.value.data[0]);
+				if(value[0] == 0x00)
+				{
+					displayPrintf(DISPLAY_ROW_TEMPVALUE,"%s", "Button Released");
+				}
+				else
+				{
+					displayPrintf(DISPLAY_ROW_TEMPVALUE,"%s", "Button Pressed");
+				}
+				/*
 				Properties.temperature = (value[1] << 0) + (value[2] << 8) + (value[3] << 16);
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection));			// Send confirmation for the indication
 				uint32_t temp;
 				temp = gattFloat32ToInt(evt->data.evt_gatt_characteristic_value.value.data);														  // Trigger RSSI measurement on the connection
-				displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temp = %d", temp);
+				displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temp = %d", temp);*/
 				break;
 
 			case gecko_evt_le_connection_parameters_id:								// To check the parameter value when a phone is connected
@@ -299,6 +344,7 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 				else						// Starting to find new devices
 				{
 					BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_start_discovery(le_gap_phy_1m, le_gap_discover_generic));
+					BTSTACK_CHECK_RESPONSE(gecko_cmd_sm_delete_bondings());
 					displayPrintf(DISPLAY_ROW_TEMPVALUE, "%s", " ");
 					displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Discovery");
 					displayPrintf(DISPLAY_ROW_ACTION, "%s", " ");

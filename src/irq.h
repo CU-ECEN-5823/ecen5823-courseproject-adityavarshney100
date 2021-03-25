@@ -24,4 +24,21 @@ void LETIMER0_IRQHandler();
  */
 void I2C0_IRQHandler();
 
+/*
+ * This handler checks for interrupts from PB0
+ * Return Type:		void
+ * Parameter:		None
+ *
+ */
+void GPIO_EVEN_IRQHandler();
+
+/*
+ * This handler checks for interrupts from PB1
+ * Return Type:		void
+ * Parameter:		None
+ *
+ */
+void GPIO_ODD_IRQHandler();
+
+
 #endif /* SRC_IRQ_H_ */
