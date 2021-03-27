@@ -42,16 +42,16 @@ uint8_t findServiceInAdvertisement(uint8_t *data, uint8_t len)
 	{
 		FieldLength = data[i];
 		FieldType = data[i+1];
-		if(FieldType == 0x02 || FieldType == 0x03)					// Partial ($02) or complete ($03) list of 16-bit UUIDs
+		if(FieldType == 0x06 || FieldType == 0x07)					// Partial ($02) or complete ($03) list of 16-bit UUIDs
 		{
-			if(memcmp(&data[i+2],ThermoService,2) == 0)				// compare UUID to Health Thermometer service UUID
+			if(memcmp(&data[i+2],pushbuttonService,16) == 0)				// compare UUID to Health Thermometer service UUID
 			{
-				return 0;
+				return 1;
 			}
 		}
 		i=i+1+FieldLength;											// advance to the next AD struct
 	}
-	return 1;
+	return 0;
 }
 
 int32_t gattFloat32ToInt(const uint8_t *value_start_little_endian)	// convert IEEE-11073 32-bit float to integer
