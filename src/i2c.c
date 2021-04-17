@@ -8,14 +8,21 @@
 #include "i2c.h"
 
 uint8_t write_command[1]={0xF3};			// Temperature measurement command
-uint8_t read_buffer[2];					    // The value read from the sensor is stored here
+uint8_t read_buffer[3]={0};					    // The value read from the sensor is stored here
 uint16_t result;							// The value that is received from the sensor is 16 bit
 float temperature;							// Measurement of the final temperature
 I2C_TransferReturn_TypeDef transferstatus;
 I2C_TransferSeq_TypeDef data;
 
-extern bool BT_connection;
-extern bool BT_indication;
+//Air quality sensor values
+uint8_t sgp_write[8]={0x26,0x0F,0x80,0x00,0xA2,0x66,0x66,0x93};		//command for raw value
+uint8_t sgp_write2[2]={0x28,0x0E};									//command for self-test
+#define device_addr (0x59)
+
+
+
+//extern bool BT_connection;
+//extern bool BT_indication;
 void InitI2C()
 {
 	I2CSPM_Init_TypeDef init;
@@ -33,26 +40,67 @@ void InitI2C()
 	NVIC_EnableIRQ(I2C0_IRQn);
 }
 
+
 void writeI2C()
 {
-	InitI2C();									// Initialize the I2C to start I2C communication
-
-	data.addr = SI7021_ADDRESS;				// Perform a write to device at I2C address 0x80
+	data.addr = device_addr<<1;				// Perform a write to device at I2C address 0x80
 	data.flags = I2C_FLAG_WRITE;
-	data.buf[0].data = &write_command[0];	// Write command for temperature measurement
-	data.buf[0].len = 1;					// Length of write command
+	data.buf[0].data = &sgp_write[0];			// Write command for temperature measurement
+	data.buf[0].len = 8;						// Length of write command
 	transferstatus=I2C_TransferInit(I2C0, &data);
+
+	LOG_INFO("Write command transfer_status=%d \t",transferstatus);
+
+	//while loop to ensure, transfer is completed
+	while (transferstatus == i2cTransferInProgress)
+	{
+		transferstatus = I2C_Transfer(I2C0);
+	}
 }
+
+//Reference: Datasheet of SGP40
+//Link: https://cdn.sparkfun.com/assets/e/6/2/6/d/Sensirion_Gas_Sensors_SGP40_Datasheet.pdf
+//Calculates the CRC values based on the previously received bytes
+uint8_t CalcCrc(uint8_t data[2])
+{
+	uint8_t crc = 0xFF;
+	for(int i = 0; i < 2; i++) {
+		crc ^= data[i];
+		for(uint8_t bit = 8; bit > 0; --bit) {
+			if(crc & 0x80) {
+				crc = (crc << 1) ^ 0x31u;
+			} else {
+				crc = (crc << 1);
+			}
+		}
+	}
+	return crc;
+}
+
 
 void readI2C()
 {
-	InitI2C();										// Initialize the I2C to start I2C communication
-
-	data.addr = SI7021_ADDRESS;						// Perform a read from device at I2C address 0x80
+	data.addr = device_addr<<1;						// Perform a read from device at I2C address 0x80
 	data.flags = I2C_FLAG_READ;
 	data.buf[0].data = &read_buffer[0];				// Load MSB of read value into read_buffer[0]
-	data.buf[0].len=2; 								// read 2 bytes
+	data.buf[0].len=3; 									// read 3 bytes, 2 bytes of data and 1 byte of CRC
 	transferstatus=I2C_TransferInit(I2C0, &data);
+	LOG_INFO("Read command transfer_status=%d \t",transferstatus);
+
+	//while loop to ensure, transfer is completed
+	while (transferstatus == i2cTransferInProgress)
+	{
+		transferstatus = I2C_Transfer(I2C0);
+	}
+
+	uint8_t crc=CalcCrc(&read_buffer);
+
+	LOG_INFO("Data %x %x %x CRC_value=%x \n", read_buffer[0],read_buffer[1],read_buffer[2],crc);
+	read_buffer[0] = 1; 	//Setting these values as 1 because, we are receiving 00 in the data,
+							//so wanted to ensure that all the values are written correctly
+							//and it is not the previous value
+	read_buffer[1] = 1;
+	read_buffer[2] = 1;
 
 }
 
@@ -63,33 +111,4 @@ void DisableI2C()
 	GPIO_PinModeSet(gpioPortC, 10, gpioModeDisabled, 1);	// Disabling the SDA port
 	GPIO_PinModeSet(gpioPortC, 11, gpioModeDisabled, 1);	// Disabling the SDL port
 	CMU_ClockEnable(cmuClock_HFPER, false);
-}
-
-void Temperature()
-{
-	uint8_t TempBuffer[5];							// Store temperature according to HTM format
-	uint8_t flags = 0x00;							// Flags set as 0 for Celsius, no time stamp, no temperature type
-	uint8_t *p = TempBuffer;						// Pointer to HTM temperature buffer needed to cpnvert values to bitstream.
-	result = 0;
-	result |= (uint16_t)(read_buffer[0]<<8);		// Load MSB of read value into variable result
-	result |= read_buffer[1];						// Load LSB of read read value into variable result
-
-	temperature=((175.72*result)/65536.0)-46.85;							// Temperature Calculation
-
-	LOG_INFO("Measured Temperature in Degrees C: %f\n", temperature);		// Log measured temperature
-
-	if(BT_connection)
-	{
-		displayPrintf(DISPLAY_ROW_TEMPVALUE, "temp:%f", temperature);
-	}
-	if(BT_indication)
-	{
-		UINT8_TO_BITSTREAM(p,flags); 					// convert flags to bit stream and append them in HTM temperature data buffer
-
-		temperature=FLT_TO_UINT32(temperature*1000, -3);	// Convert sensor data to Temperature format
-
-		UINT32_TO_BITSTREAM(p,(uint32_t)temperature);				// Convert temperature to bitstream and place it in the HTM temperature data buffer
-
-		gecko_cmd_gatt_server_send_characteristic_notification(0xFF, gattdb_temperature_measurement, 5, TempBuffer);
-	}
 }

@@ -45,12 +45,6 @@ void writeI2C();
 */
 void readI2C();
 
-/*
- * Calculation for temperature
- * Return type: VOID
- * Parameter:	None
-*/
-void Temperature();
 
 /*
  * Disables I2C

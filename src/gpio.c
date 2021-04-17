@@ -11,17 +11,14 @@
 // Students see file: gpio.h for instructions
 #include "gpio.h"
 
-
-
-
-
-
 void gpioInit()
 {
 	GPIO_DriveStrengthSet(Temperature_port, gpioDriveStrengthWeakAlternateWeak);
 	GPIO_PinModeSet(Temperature_port, Temperature_pin, gpioModePushPull, false);
 	GPIO_PinModeSet(PB0_port, PB0_pin, gpioModeInput, true);
 	GPIO_PinModeSet(PB1_port, PB1_pin, gpioModeInput, true);
+	GPIO_PinModeSet(gpioPortC,10,gpioModeWiredAndPullUpFilter,1);
+	GPIO_PinModeSet(gpioPortC,11,gpioModeWiredAndPullUpFilter,1);
 }
 
 void gpioLed0SetOn()

@@ -11,7 +11,6 @@ const uint8_t ThermoService[2] = {0x09, 0x18};			// Service UUID of health therm
 const uint8_t ThermoCharacteristic[2] = {0x1c, 0x2a};	// Characteristic UUID of temperature measurement as defined by Bluetooth SIG
 uint8_t server_bt_addr[] = SERVER_BT_ADDRESS;
 int8_t rssi;
-extern float temperature;
 bool BT_connection = false;
 bool BT_indication = false;
 uint16_t error = 0;

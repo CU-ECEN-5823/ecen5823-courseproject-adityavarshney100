@@ -31,8 +31,9 @@ void process_event(struct gecko_cmd_packet *event)
 	break;
 
 	case STATE1_WARMUP:
-		nextState = STATE1_WARMUP;
-		if ((event->data.evt_system_external_signal.extsignals & LETIMER0_COMP1) != 0)
+		nextState = STATE2_TEMP_WAIT;
+		writeI2C();
+		/*if ((event->data.evt_system_external_signal.extsignals & LETIMER0_COMP1) != 0)
 		{
 			#ifdef Debug
 			LOG_INFO("1");
@@ -41,11 +42,12 @@ void process_event(struct gecko_cmd_packet *event)
 			CMU_ClockEnable (cmuClock_I2C0, true);  // enable=true
 			writeI2C();								// Perform I2C write
 			nextState=STATE2_TEMP_WAIT;
-		}
+		}*/
 	break;
 
 	case STATE2_TEMP_WAIT:
-		nextState = STATE2_TEMP_WAIT;
+		nextState = STATE3_READ_WAIT;
+		LOG_INFO("Temp_wait\n");
 		if ((event->data.evt_system_external_signal.extsignals & I2C_TRANSFER_DONE) !=0)
 		{
 			#ifdef Debug
@@ -58,6 +60,8 @@ void process_event(struct gecko_cmd_packet *event)
 	break;
 
 	case STATE3_READ_WAIT:
+		LOG_INFO("Read state\n");
+		readI2C();
 		nextState = STATE3_READ_WAIT;
 		if ((event->data.evt_system_external_signal.extsignals & LETIMER0_COMP1) != 0)
 		{
@@ -71,7 +75,9 @@ void process_event(struct gecko_cmd_packet *event)
 	break;
 
 	case STATE4_REPORT:
-		nextState = STATE4_REPORT;
+		nextState = STATE1_WARMUP;
+		LOG_INFO("Report state\n");
+		Temperature();
 		if ((event->data.evt_system_external_signal.extsignals & I2C_TRANSFER_DONE) !=0)
 		{
 			SLEEP_SleepBlockEnd(sleepEM2);

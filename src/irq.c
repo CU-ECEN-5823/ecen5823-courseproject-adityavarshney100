@@ -12,14 +12,17 @@ uint32_t timestamp = 0;
 int      rollover  = 0;
 uint8_t button0_state;
 uint8_t button1_state;
-
+uint8_t flag=0;
+uint8_t flag1;
 
 
 void I2C0_IRQHandler()
 {
 	transferstatus=I2C_Transfer(I2C0);						// TO check if the transfer has successfully happened
+
 	if(transferstatus == i2cTransferDone)
 	{
+		flag=1;
 		CORE_DECLARE_IRQ_STATE;
 		CORE_ENTER_CRITICAL();								// Enter the critical mode
 		SetEventI2CTransferDone();							// Set the identifier for the event
@@ -48,6 +51,7 @@ void LETIMER0_IRQHandler()
 		SetEventComp1();
 		CORE_EXIT_CRITICAL();
 		LETIMER_IntDisable(LETIMER0,LETIMER_IF_COMP1);
+		flag1=1;
 	}
 }
 
