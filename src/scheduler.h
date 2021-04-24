@@ -38,8 +38,8 @@ typedef enum uint32_t
 
 #define ON 1							// Mode to turn on the identifier for the event
 #define OFF 0							// Mode to turn off the identifier for the event
-#define POWERUP_TIME_US 120000			// Time taken by the Temperature sensor to power up
-#define CONVERSION_TIME_US 10800		// Time taken by by the sensor to convert data
+#define POWERUP_TIME_US 1000			// Time taken by the air quality sensor to power up, as per the datasheet it is 0.6ms but keeping it 1ms to be safe
+#define CONVERSION_TIME_US 250000		// Time taken by by the sensor to convert data
 
 
 /*

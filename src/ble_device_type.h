@@ -13,12 +13,12 @@
  * Set to 1 to configure this build as a BLE server.
  * Set to 0 to configure as a BLE client
  */
-#define DEVICE_IS_BLE_SERVER 0
+#define DEVICE_IS_BLE_SERVER 1
 
 
 
 // Set this #define to the bd_addr of the Gecko that will be your Server
-#define SERVER_BT_ADDRESS { 0xf7, 0x7e, 0xa9, 0x9f, 0xfd, 0x90 }
+#define SERVER_BT_ADDRESS { 0xb0, 0x2e, 0xef, 0x57, 0x0b, 0x00}
 
 #if DEVICE_IS_BLE_SERVER
 #define BUILD_INCLUDES_BLE_SERVER 1

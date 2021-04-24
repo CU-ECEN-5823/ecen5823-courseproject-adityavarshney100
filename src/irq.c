@@ -10,8 +10,8 @@
 extern I2C_TransferReturn_TypeDef transferstatus;
 uint32_t timestamp = 0;
 int      rollover  = 0;
-uint8_t button0_state;
-uint8_t button1_state;
+uint16_t button0_state;
+uint16_t button1_state;
 uint8_t flag=0;
 uint8_t flag1;
 
@@ -51,7 +51,6 @@ void LETIMER0_IRQHandler()
 		SetEventComp1();
 		CORE_EXIT_CRITICAL();
 		LETIMER_IntDisable(LETIMER0,LETIMER_IF_COMP1);
-		flag1=1;
 	}
 }
 

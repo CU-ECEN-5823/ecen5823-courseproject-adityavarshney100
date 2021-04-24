@@ -21,7 +21,7 @@ uint8_t sgp_write2[2]={0x28,0x0E};									//command for self-test
 
 
 
-//extern bool BT_connection;
+extern bool BT_connection;
 //extern bool BT_indication;
 void InitI2C()
 {
@@ -85,7 +85,7 @@ void readI2C()
 	data.buf[0].data = &read_buffer[0];				// Load MSB of read value into read_buffer[0]
 	data.buf[0].len=3; 									// read 3 bytes, 2 bytes of data and 1 byte of CRC
 	transferstatus=I2C_TransferInit(I2C0, &data);
-	LOG_INFO("Read command transfer_status=%d \t",transferstatus);
+	//LOG_INFO("Read command transfer_status=%d \t",transferstatus);
 
 	//while loop to ensure, transfer is completed
 	while (transferstatus == i2cTransferInProgress)
@@ -94,13 +94,33 @@ void readI2C()
 	}
 
 	uint8_t crc=CalcCrc(&read_buffer);
+	uint32_t voc_value=0;
+	voc_value = read_buffer[0]+(read_buffer[1]<<8);
 
-	LOG_INFO("Data %x %x %x CRC_value=%x \n", read_buffer[0],read_buffer[1],read_buffer[2],crc);
-	read_buffer[0] = 1; 	//Setting these values as 1 because, we are receiving 00 in the data,
-							//so wanted to ensure that all the values are written correctly
-							//and it is not the previous value
-	read_buffer[1] = 1;
-	read_buffer[2] = 1;
+
+	if(read_buffer[2]==crc)
+	{
+		LOG_INFO("Voc value = %d", voc_value);
+		if(voc_value>30000)
+			gpioLed0SetOn();
+		else
+			gpioLed0SetOff();
+
+		if(BT_connection==1)
+			displayPrintf(DISPLAY_ROW_TEMPVALUE,"VOC = %d",voc_value);
+	}
+	else
+	{
+		LOG_INFO("Invalid Data");
+	}
+	//Resetting the values
+	read_buffer[0] = 0;
+	read_buffer[1] = 0;
+	read_buffer[2] = 0;
+
+
+
+
 
 }
 

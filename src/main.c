@@ -29,22 +29,7 @@ int appMain(gecko_configuration_t *config)
 	displayInit();
 
 	InitI2C();
-	int i=0;
-	//Created a while just for the testing of i2c, will remove this in the final project
-	while(1)
-	{
-		writeI2C();
-		for(i=0;i<1000;i++)		//Delay of 250ms, suggested in the datasheet, without this delay I2C does not work
-			UDELAY_Delay(250);
 
-		readI2C();
-		for(i=0;i<1000;i++)
-			UDELAY_Delay(250);
-	}
-
-
-	//Commenting this part to avoid unnecessary confusion and focusing just on I2C
-/*
 	while (1)
 	{
 		struct gecko_cmd_packet* evt;
@@ -59,5 +44,4 @@ int appMain(gecko_configuration_t *config)
 			process_event(evt); 						// handle events
 		}
 	}
-*/
 }

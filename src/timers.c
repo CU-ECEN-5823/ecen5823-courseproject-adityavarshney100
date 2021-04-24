@@ -51,7 +51,7 @@ void TimerWaitUs(uint32_t delay_us)
 
 	if(delay_us > (LETIMER_PERIOD_MS*1000))					// Condition to check if the delay time can be handled
 	{
-		LOG_ERROR("The delay is greater than the vale which can be handled by LETIMER");
+		LOG_ERROR("The delay is greater than the value which can be handled by LETIMER");
 		delay_us=3000000;									// Maximum possible delay
 	}
 
@@ -69,7 +69,6 @@ void TimerWaitUs(uint32_t delay_us)
 
 	LETIMER_CompareSet(LETIMER0,1,ticker_max);
 	LETIMER_IntEnable(LETIMER0,LETIMER_IF_COMP1);			// Enable interrupt for COMP1
-
 }
 
 uint32_t get_timestamp()
