@@ -5,7 +5,6 @@
  *      Author: aditya.vny95
  */
 
-
 #include "main.h"
 #include "init_app.h"
 #include "log.h"
@@ -25,23 +24,24 @@ int appMain(gecko_configuration_t *config)
 	SLEEP_InitEx (&sleepInitExData);
 	logInit();									// Initialize the log to see Prints on terminal
 	enable_button_interrupt();
-	SLEEP_SleepBlockBegin(sleepEM3);
+	SLEEP_SleepBlockBegin(sleepEM3);			//Sleeping to save energy
 	displayInit();
-
 	InitI2C();
 
 	while (1)
 	{
 		struct gecko_cmd_packet* evt;
 		if (!gecko_event_pending())
-		{ 										// no more events
+		{ 											// no more events
 			logFlush(); 							// flush the LOG before we sleep
 		}
 		evt = gecko_wait_event(); 					// get 1 event
-		handler_ble_event(evt);					// Handle Bluetooth stack events
+		handler_ble_event(evt);						// Handle Bluetooth stack events
 		if(BGLIB_MSG_ID(evt->header) == gecko_evt_system_external_signal_id)
 		{
-			process_event(evt); 						// handle events
+			process_event(evt); 					// handle events
 		}
+		if(DEVICE_IS_BLE_SERVER == 0)
+			handle_ble_event_2(evt);
 	}
 }

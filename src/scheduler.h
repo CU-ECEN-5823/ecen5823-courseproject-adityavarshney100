@@ -40,7 +40,8 @@ typedef enum uint32_t
 #define OFF 0							// Mode to turn off the identifier for the event
 #define POWERUP_TIME_US 1000			// Time taken by the air quality sensor to power up, as per the datasheet it is 0.6ms but keeping it 1ms to be safe
 #define CONVERSION_TIME_US 250000		// Time taken by by the sensor to convert data
-
+#define GOOD_AIR_QUALITY_THRES 200
+#define MAPPING_VALUE	131				//Mapping 0-65535 to 0-500
 
 /*
  * Schedule routine to sea a scheduler event, must be called from a critical section
@@ -99,5 +100,14 @@ void SetEventI2CTransferDone();
  * Parameter: none
 */
 void schedulerSetEventButtonPress(void);
+
+
+/*
+ * Based on the VOC value, decided the state of the relay
+ * and sends both the values (VOC and Relay_state)
+ * Returns: none
+ * Parameter: none
+ */
+void send_values();
 
 #endif /* SRC_SCHEDULER_H_ */

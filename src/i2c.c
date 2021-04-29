@@ -18,11 +18,9 @@ I2C_TransferSeq_TypeDef data;
 uint8_t sgp_write[8]={0x26,0x0F,0x80,0x00,0xA2,0x66,0x66,0x93};		//command for raw value
 uint8_t sgp_write2[2]={0x28,0x0E};									//command for self-test
 #define device_addr (0x59)
-
-
+extern uint16_t curr_voc_value;
 
 extern bool BT_connection;
-//extern bool BT_indication;
 void InitI2C()
 {
 	I2CSPM_Init_TypeDef init;
@@ -94,34 +92,24 @@ void readI2C()
 	}
 
 	uint8_t crc=CalcCrc(&read_buffer);
-	uint32_t voc_value=0;
-	voc_value = read_buffer[0]+(read_buffer[1]<<8);
+	curr_voc_value = read_buffer[0]+(read_buffer[1]<<8);
+	curr_voc_value = curr_voc_value/MAPPING_VALUE; 		//Mapping 0-65535 to 0-500
 
-
-	if(read_buffer[2]==crc)
+	if(read_buffer[2]==crc) //Only display the value after CRC check
 	{
-		LOG_INFO("Voc value = %d", voc_value);
-		if(voc_value>30000)
-			gpioLed0SetOn();
-		else
-			gpioLed0SetOff();
-
+		LOG_INFO("Voc value = %d", curr_voc_value);
 		if(BT_connection==1)
-			displayPrintf(DISPLAY_ROW_TEMPVALUE,"VOC = %d",voc_value);
+			displayPrintf(DISPLAY_ROW_ACTION,"VOC = %d",curr_voc_value);
 	}
 	else
 	{
 		LOG_INFO("Invalid Data");
 	}
+
 	//Resetting the values
 	read_buffer[0] = 0;
 	read_buffer[1] = 0;
 	read_buffer[2] = 0;
-
-
-
-
-
 }
 
 void DisableI2C()

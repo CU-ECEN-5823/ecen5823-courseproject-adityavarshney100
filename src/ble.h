@@ -18,6 +18,8 @@
 #include "gecko_ble_errors.h"
 #include <math.h>
 #include "bg_gattdb_def.h"
+#include "timers.h"
+#include "gpio.h"
 
 #define ADVERTISING_MINIMUM 			400			// Minimum advertising interval. Value in units of 0.625 ms, for 250 ms, 250/0.625 = 400
 #define ADVERTISING_MAXIMUM 			400			// Minimum advertising interval. Value in units of 0.625 ms, for 250 ms, 250/0.625 = 400
@@ -52,14 +54,38 @@ typedef enum {
 	running
 } ConnectionState;
 
+typedef enum {
+	evt_completed,
+	voc_value_Service,
+	voc_value_Char,
+	relay_state_Service,
+	relay_state_Char
+}Completed_event;
+
 typedef struct{
 	uint8_t 	connectionHandle;
 	int8_t 		rssi;
 	uint16_t	serverAddress;
-	uint32_t	pushbuttonServiceHandle;
-	uint16_t	pushbuttonCharacteristicHandle;
-	uint32_t	pushbuttton;
+	uint32_t	voc_valueServiceHandle;
+	uint16_t	voc_valueCharacteristicHandle;
+	uint32_t	relay_stateServiceHandle;
+	uint16_t	relay_stateCharacteristicHandle;
+	uint32_t	voc_value;
+	uint32_t 	relay_state;
 } ConnectionProperties;
+
+
+typedef enum State_char
+{
+	service_1_discover,
+	service_2_discover,
+	char_1_discover,
+	char_2_discover,
+	char_1_notify,
+	char_2_notify,
+	char_1_read,
+	last_state
+} State_char_t;
 
 /*
  * The ble function that handles the gecko BLE events
@@ -67,6 +93,13 @@ typedef struct{
  * Parameters: 	BLE connection
  */
 void handler_ble_event(struct gecko_cmd_packet *event);
+
+/*
+ * This ble function is state machine to handle 2 gatt services and notify the same
+ * Return Type: NONE
+ * Parameters: 	BLE connection
+ */
+void handle_ble_event_2(struct gecko_cmd_packet *event);
 
 
 /*

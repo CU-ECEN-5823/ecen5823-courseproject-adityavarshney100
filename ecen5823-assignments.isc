@@ -69,59 +69,30 @@ appPlugin: stack_bridge=false
       <properties write="true" write_requirement="optional"/>
     </characteristic>
   </service>
-  <service advertise="false" id="health_thermometer" name="Health Thermometer" requirement="mandatory" sourceId="org.bluetooth.service.health_thermometer" type="primary" uuid="1809">
-    <informativeText>Abstract:  The Health Thermometer service exposes temperature and other data from a thermometer intended for healthcare and fitness applications.  Summary:  The Health Thermometer service is instantiated as a Primary Service. There are one or more instantiations of the Health Thermometer service per device claiming conformance with this specification.  </informativeText>
-    <characteristic id="temperature_measurement" name="Temperature Measurement" sourceId="org.bluetooth.characteristic.temperature_measurement" uuid="2A1C">
-      <informativeText/>
-      <value length="17" type="hex" variable_length="false"/>
-      <properties indicate="true" indicate_requirement="mandatory" notify="false" notify_requirement="excluded" read="false" read_requirement="excluded" reliable_write="false" reliable_write_requirement="excluded" write="false" write_no_response="false" write_no_response_requirement="excluded" write_requirement="excluded"/>
-      <descriptor id="client_characteristic_configuration" name="Client Characteristic Configuration" sourceId="org.bluetooth.descriptor.gatt.client_characteristic_configuration" uuid="2902">
-        <properties read="true" read_requirement="mandatory" write="true" write_requirement="mandatory"/>
-        <value length="2" type="hex" variable_length="false"/>
-      </descriptor>
-    </characteristic>
-    <characteristic id="temperature_type" name="Temperature Type" sourceId="org.bluetooth.characteristic.temperature_type" uuid="2A1D">
-      <informativeText>Abstract:  The Temperature Type characteristic is an enumeration that indicates where the temperature was measured.  Summary:  These Temperature Type values correspond to the Temperature Type descriptions used in ISO/IEEE 11073-10408-2008.  </informativeText>
-      <value length="1" type="hex" variable_length="false"/>
-      <properties indicate="false" indicate_requirement="excluded" notify="false" notify_requirement="excluded" read="true" read_requirement="mandatory" reliable_write="false" reliable_write_requirement="excluded" write="false" write_no_response="false" write_no_response_requirement="excluded" write_requirement="excluded"/>
-    </characteristic>
-    <characteristic id="intermediate_temperature" name="Intermediate Temperature" sourceId="org.bluetooth.characteristic.intermediate_temperature" uuid="2A1E">
-      <informativeText>Abstract:  The Intermediate Temperature characteristic has the same format as the Temperature Measurement characteristic. However, due to a different context, the Value field is referred to as the Intermediate Temperature Value field.  </informativeText>
-      <value length="17" type="hex" variable_length="false"/>
-      <properties indicate="false" indicate_requirement="excluded" notify="true" notify_requirement="mandatory" read="false" read_requirement="excluded" reliable_write="false" reliable_write_requirement="excluded" write="false" write_no_response="false" write_no_response_requirement="excluded" write_requirement="excluded"/>
-      <descriptor id="client_characteristic_configuration_2" name="Client Characteristic Configuration" sourceId="org.bluetooth.descriptor.gatt.client_characteristic_configuration" uuid="2902">
-        <properties read="true" read_requirement="mandatory" write="true" write_requirement="mandatory"/>
-        <value length="2" type="hex" variable_length="false"/>
-      </descriptor>
-    </characteristic>
-    <characteristic id="measurement_interval" name="Measurement Interval" sourceId="org.bluetooth.characteristic.measurement_interval" uuid="2A21">
-      <informativeText>Abstract:  The Measurement Interval characteristic defines the time between measurements.  Summary:  This characteristic is capable of representing values from 1 second to 65535 seconds which is equal to 18 hours, 12 minutes and 15 seconds.  </informativeText>
-      <value length="2" type="hex" variable_length="false"/>
-      <properties indicate="false" indicate_requirement="optional" notify="false" notify_requirement="excluded" read="true" read_requirement="mandatory" reliable_write="false" reliable_write_requirement="excluded" write="false" write_no_response="false" write_no_response_requirement="excluded" write_requirement="optional"/>
-      <descriptor id="client_characteristic_configuration_3" name="Client Characteristic Configuration" sourceId="org.bluetooth.descriptor.gatt.client_characteristic_configuration" uuid="2902">
-        <properties read="true" read_requirement="mandatory" write="true" write_requirement="mandatory"/>
-        <value length="2" type="hex" variable_length="false"/>
-      </descriptor>
-      <descriptor id="valid_range" name="Valid Range" sourceId="org.bluetooth.descriptor.valid_range" uuid="2906">
-        <properties read="true" read_requirement="mandatory" write="false" write_requirement="excluded"/>
-        <value length="4" type="hex" variable_length="false"/>
-      </descriptor>
-    </characteristic>
-  </service>
-  <service advertise="true" name="ECEN5823 Encryption Test" requirement="mandatory" sourceId="custom.type" type="primary" uuid="00000001-38c8-433e-87ec-652a2d136289">
-    <informativeText>Custom service</informativeText>
-    <characteristic id="button_state" name="ECEN5823 Encrypted Button State" sourceId="custom.type" uuid="00000002-38c8-433e-87ec-652a2d136289">
-      <informativeText>Custom characteristic</informativeText>
-      <value length="1" type="hex" variable_length="false">0x00</value>
-      <properties encrypted_read="true" encrypted_read_requirement="optional" indicate="true" indicate_requirement="optional"/>
-    </characteristic>
-  </service>
   <service advertise="false" id="tx_power" name="Tx Power" requirement="mandatory" sourceId="org.bluetooth.service.tx_power" type="primary" uuid="1804">
     <informativeText>Abstract:  This service exposes a device's current transmit power level when in a connection.  Summary:  The Tx Power service is instantiated as a Primary Service. There is only one instance of the Tx Power service on a device. There is exactly one instance of the Tx Power Level characteristic  </informativeText>
     <characteristic id="tx_power_level" name="Tx Power Level" sourceId="org.bluetooth.characteristic.tx_power_level" uuid="2A07">
       <informativeText>Abstract:  The Transmit Power Level characteristic represents the current transmit power level in dBm, and the level ranges from -100 dBm to +20 dBm to a resolution of 1 dBm.  Summary:  The value of the characteristic is a signed 8 bit integer that has a fixed point exponent of 0.  Examples:  The value 0x12 is interpreted as +18dBm  The value 0xEE is interpreted as -18dBm  </informativeText>
       <value length="1" type="hex" variable_length="false"/>
       <properties indicate="false" indicate_requirement="excluded" notify="false" notify_requirement="excluded" read="true" read_requirement="mandatory" reliable_write="false" reliable_write_requirement="excluded" write="false" write_no_response="false" write_no_response_requirement="excluded" write_requirement="excluded"/>
+    </characteristic>
+  </service>
+  <service advertise="true" id="voc_value" name="voc_value" requirement="mandatory" sourceId="custom.type" type="primary" uuid="71b5d4cc-44a6-47e3-9de7-48a9358d8a48">
+    <informativeText>Custom service</informativeText>
+    <characteristic id="voc_value" name="voc_value" sourceId="custom.type" uuid="037cc804-3cfe-442e-bd56-08f6de910ce9">
+      <description>voc_value</description>
+      <informativeText>Custom characteristic</informativeText>
+      <value length="4" type="hex" variable_length="false">0x00000000</value>
+      <properties encrypted_read="true" encrypted_read_requirement="optional" indicate="true" indicate_requirement="optional"/>
+    </characteristic>
+  </service>
+  <service advertise="true" id="relay_state" name="relay_state" requirement="mandatory" sourceId="custom.type" type="primary" uuid="1a58d950-554c-4e7c-af87-c89f05d9d3ff">
+    <informativeText>Custom service</informativeText>
+    <characteristic id="relay_state" name="relay_state" sourceId="custom.type" uuid="2b985ab8-8d42-4a06-9d72-8969360cef8c">
+      <description>relay_state</description>
+      <informativeText>Custom characteristic</informativeText>
+      <value length="1" type="hex" variable_length="false">0x00</value>
+      <properties encrypted_read="true" encrypted_read_requirement="optional" indicate="true" indicate_requirement="optional"/>
     </characteristic>
   </service>
 </gatt>

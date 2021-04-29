@@ -30,6 +30,9 @@
 #define Button1_Pressed		0x10
 #define SensorI2cSCL_port 	gpioPortC
 #define SensorI2cSCL_pin  	10
+#define Relay_port			gpioPortC
+#define Relay_pin			9
+
 /**
  * See alternate functionality table entry for PC10 in part
  * datasheet at https://www.silabs.com/documents/login/data-sheets/efr32bg13-datasheet.pdf
@@ -55,47 +58,18 @@ void gpioInit();
 
 
 /*
- * Turns on LED0
+ * Turns on Beefcake Relay
  * Parameter: 	None
  * Return type: VOID
  */
-void gpioLed0SetOn();
-
-
-/*
- * Turns off LED0
- * Parameter: 	None
- * Return type: VOID
- */
-void gpioLed0SetOff();
+void gpioRelayOn();
 
 /*
- * Turns on LED1
+ * Turns off the Beefcake relay
  * Parameter: 	None
  * Return type: VOID
  */
-void gpioLed1SetOn();
-
-/*
- * Turns off the LED1
- * Parameter: 	None
- * Return type: VOID
- */
-void gpioLed1SetOff();
-
-/*
- * Turns on the Temperature sensor
- * Parameter: 	None
- * Return type: VOID
- */
-void TempSensorSetOn();
-
-/*
- * Turns off the Temperature sensor
- * Parameter: 	None
- * Return type: VOID
- */
-void TempSensorSetOff();
+void gpioRelayOff();
 
 /*
  * Disable SDA GPIO

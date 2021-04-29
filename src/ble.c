@@ -7,10 +7,8 @@
 
 #include "ble.h"
 
-
-
-const uint8_t ThermoService[2] = {0x09, 0x18};			// Service UUID of health thermometer as defined by Bluetooth SIG
-const uint8_t ThermoCharacteristic[2] = {0x1c, 0x2a};	// Characteristic UUID of temperature measurement as defined by Bluetooth SIG
+//const uint8_t ThermoService[2] = {0x09, 0x18};			// Service UUID of health thermometer as defined by Bluetooth SIG
+//const uint8_t ThermoCharacteristic[2] = {0x1c, 0x2a};	// Characteristic UUID of temperature measurement as defined by Bluetooth SIG
 uint8_t server_bt_addr[] = SERVER_BT_ADDRESS;
 int8_t rssi;
 bool BT_connection = false;
@@ -18,16 +16,17 @@ bool BT_indication = false;
 uint16_t error = 0;
 uint8_t flag_button = 0;
 
-const uint8_t pushbuttonService[16] = {0x89, 0x62, 0x13, 0x2d, 0x2a, 0x65, 0xec, 0x87, 0x3e, 0x43, 0xc8, 0x38, 0x01, 0x00, 0x00, 0x00};
-const uint8_t pushbuttonChar[16]	= {0x89, 0x62, 0x13, 0x2d, 0x2a, 0x65, 0xec, 0x87, 0x3e, 0x43, 0xc8, 0x38, 0x02, 0x00, 0x00, 0x00};
+const uint8_t relay_stateService[16]= {0xff, 0xd3, 0xd9, 0x05, 0x9f, 0xc8, 0x87, 0xaf, 0x7c, 0x4e, 0x4c, 0x55, 0x50, 0xd9, 0x58, 0x1a};
+const uint8_t relay_stateChar[16]	= {0x8c, 0xef, 0x0c, 0x36, 0x69, 0x89, 0x72, 0x9d, 0x06, 0x4a, 0x42, 0x8d, 0xb8, 0x5a, 0x98, 0x2b};
 
-
+const uint8_t voc_valueService[16] 	= {0x48, 0x8a, 0x8d, 0x35, 0xa9, 0x48, 0xe7, 0x9d, 0xe3, 0x47, 0xa6, 0x44, 0xcc, 0xd4, 0xb5, 0x71};
+const uint8_t voc_valueChar[16]		= {0xe9, 0x0c, 0x91, 0xde, 0xf6, 0x08, 0x56, 0xbd, 0x2e, 0x44, 0xfe, 0x3c, 0x04, 0xc8, 0x7c, 0x03};
+uint8_t cli_connection;
 
 ConnectionState State;
 ConnectionProperties Properties;
+Completed_event evt_complete;
 extern uint8_t button0_state;
-extern uint8_t button1_state;
-
 
 uint8_t connection_handle	= 0;
 uint8_t connection1_handle 	= 0;
@@ -40,21 +39,14 @@ bool press_1 		= true;
 
 uint8_t findServiceInAdvertisement(uint8_t *data, uint8_t len)
 {
-	uint8_t FieldLength;
-	uint8_t FieldType;
 	uint8_t i=0;
 	while(i<len)													// Parse advertisement packet
 	{
-		FieldLength = data[i];
-		FieldType = data[i+1];
-		if(FieldType == 0x06 || FieldType == 0x07)					// Partial ($02) or complete ($03) list of 16-bit UUIDs
+		if(memcmp(&data[i],voc_valueService,16) == 0)				// compare UUID to Health Thermometer service UUID
 		{
-			if(memcmp(&data[i+2],pushbuttonService,16) == 0)				// compare UUID to Health Thermometer service UUID
-			{
-				return 1;
-			}
+			return 1;
 		}
-		i=i+1+FieldLength;											// advance to the next AD struct
+		i=i+1;											// advance to the next AD struct
 	}
 	return 0;
 }
@@ -75,7 +67,8 @@ int32_t gattFloat32ToInt(const uint8_t *value_start_little_endian)	// convert IE
 
 void handler_ble_event(struct gecko_cmd_packet *evt)
 {
-	uint8_t *value;
+	uint32_t *vocsensor_value;
+	uint8_t *relay_value;
 	switch(BGLIB_MSG_ID(evt->header))
 	{
 	case gecko_evt_system_boot_id:							  // This boot event is generated when the system boots up after reset
@@ -134,9 +127,10 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 		{
 			displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Connected");
 			displayPrintf(DISPLAY_ROW_BTADDR2, "%x:%x:%x:%x:%x:%x", server_bt_addr[5], server_bt_addr[4], server_bt_addr[3], server_bt_addr[2], server_bt_addr[1], server_bt_addr[0]);
-			BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(evt->data.evt_le_connection_opened.connection, 16, (const uint8_t*) pushbuttonService));					// Discover Health Thermometer service on the slave device
+			BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(evt->data.evt_le_connection_opened.connection, 16, (const uint8_t*) voc_valueService));					// Discover Health Thermometer service on the slave device
 			State = discoverServices;
 			gecko_cmd_sm_increase_security(connection_handle);
+			cli_connection = evt->data.evt_le_connection_opened.connection;
 		}
 
 		break;
@@ -154,12 +148,19 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 		displayPrintf(DISPLAY_ROW_ACTION, "%s", "Confirm with PB0");
 		wait_confirm = true;
 		passkey = evt->data.evt_sm_confirm_passkey.passkey;				// Saving the passkey
+		connection_handle = evt->data.evt_sm_confirm_passkey.connection;
 		break;
 
 	case gecko_evt_gatt_service_id:							// This event is generated when a new service is discovered
-		if(!(memcmp(evt->data.evt_gatt_service.uuid.data,pushbuttonService,16)))
+		if(!(memcmp(evt->data.evt_gatt_service.uuid.data,voc_valueService,16)))
 		{
-			Properties.pushbuttonServiceHandle = evt->data.evt_gatt_service.service;		// Save service handle for future reference
+			Properties.voc_valueServiceHandle = evt->data.evt_gatt_service.service;		// Save service handle for future reference
+			evt_complete = voc_value_Service;
+		}
+		if(!(memcmp(evt->data.evt_gatt_service.uuid.data,relay_stateService,16)))
+		{
+			Properties.relay_stateServiceHandle = evt->data.evt_gatt_service.service;		// Save service handle for future reference
+			evt_complete = relay_state_Service;
 		}
 		break;
 
@@ -193,12 +194,7 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 				displayPrintf(DISPLAY_ROW_ACTION, "%s", " ");
 				displayPrintf(DISPLAY_ROW_PASSKEY, "%s", " ");
 				wait_confirm = false;
-			}/*
-			else if(evt->data.evt_system_external_signal.extsignals & EVT_BUTTON_PRESS)
-			{
-				LOG_INFO("Button_State");
-				gecko_cmd_gatt_server_write_attribute_value(gattdb_button_state,0,sizeof(button0_state),&value);
-			}*/
+			}
 		}
 		else
 		{
@@ -211,66 +207,34 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 					displayPrintf(DISPLAY_ROW_ACTION, "%s", " ");
 					displayPrintf(DISPLAY_ROW_PASSKEY, "%s", " ");
 				}
-				else if (button1_state == Button1_Pressed)
-				{
-					BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_read_characteristic_value_by_uuid(connection_handle,Properties.pushbuttonServiceHandle, 16, (const uint8_t*) pushbuttonChar));
-				}
 			}
 		}
 		break;
 
 	case gecko_evt_gatt_characteristic_id:					// This event is generated when a new characteristic is discovered
-		Properties.pushbuttonCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;			  // Save characteristic handle for future reference
+		if(!(memcmp(evt->data.evt_gatt_characteristic.uuid.data,voc_valueChar,16)))
+		{
+			Properties.voc_valueCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;		// Save char handle for future reference
+			evt_complete = voc_value_Char;
+		}
+		if(!(memcmp(evt->data.evt_gatt_characteristic.uuid.data,relay_stateChar,16)))
+		{
+			Properties.relay_stateCharacteristicHandle = evt->data.evt_gatt_characteristic.characteristic;		// Save char handle for future reference
+			evt_complete = relay_state_Char;
+		}
 		break;
 
 	case gecko_evt_gatt_procedure_completed_id:				// This event is generated for various procedure completions, e.g. when a write procedure is completed, or service discovery is completed
-		if(State == discoverServices && Properties.pushbuttonServiceHandle != SERVICE_HANDLE_INVALID)
-		{
-			BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_characteristics_by_uuid(connection_handle, Properties.pushbuttonServiceHandle, 16, (const uint8_t*)pushbuttonChar));
-			State = discoverCharacteristics;
-			break;
-		}
-		if(State == discoverCharacteristics && Properties.pushbuttonCharacteristicHandle != CHARACTERISTIC_HANDLE_INVALID)
-		{
-			/*if(evt->data.evt_gatt_procedure_completed.result == 0x040F)
-				{
-					LOG_INFO("Implemented Security ");
-					gecko_cmd_sm_increase_security(connection_handle);
-					press_1 = false;
-				}*/
-			//BTSTACK_CHECK_RESPONSE(gecko_cmd_le_gap_end_procedure());			// discovering stop
-			BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_set_characteristic_notification(evt->data.evt_gatt_procedure_completed.connection, Properties.pushbuttonCharacteristicHandle, gatt_indication));
-			displayPrintf(DISPLAY_ROW_CONNECTION, "%s", "Handling Indications");
-			State = enableIndication;
-
-			if(State == enableIndication)
-			{
-				State = running;
-			}
-		}
+		if(evt_complete== voc_valueChar || evt_complete== voc_valueService || evt_complete== relay_stateChar || evt_complete== relay_stateService)
+			evt_complete = evt_completed;
 		break;
 
 	case gecko_evt_gatt_server_characteristic_status_id:		// Getting the gatt server status
-
-		if(evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_temperature_measurement
-				&& evt->data.evt_gatt_server_characteristic_status.status_flags == gatt_server_client_config)
-		{
-			if(evt->data.evt_gatt_server_characteristic_status.client_config_flags == gatt_indication)
-			{
-				BT_indication = true;
-			}
-			else if(evt->data.evt_gatt_server_characteristic_status.client_config_flags == gatt_disable)
-			{
-				BT_indication = false;
-			}
-		}
 		gecko_cmd_le_connection_get_rssi(evt->data.evt_gatt_server_characteristic_status.connection);
 		break;
 
 	case gecko_evt_le_connection_rssi_id:						// To change the power levels of the Bluetooth according to the RSSI value of the signal between phone and gecko
 		rssi=evt->data.evt_le_connection_rssi.rssi;
-
-
 
 		if(rssi>-35)
 		{
@@ -306,13 +270,33 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 
 	case gecko_evt_gatt_characteristic_value_id:			  // This event is generated when a characteristic value was received e.g. an indication
 
-		gecko_cmd_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection);
+
+		if(evt->data.evt_gatt_characteristic.characteristic==gattdb_voc_value)
+		{
+			BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection));
+			vocsensor_value = evt->data.evt_gatt_characteristic_value.value.data;
+			displayPrintf(DISPLAY_ROW_ACTION,"VOC = %d",*vocsensor_value);
+			LOG_INFO("VOC Value = %d",*vocsensor_value);
+
+			if(*vocsensor_value > GOOD_AIR_QUALITY_THRES)
+				gpioRelayOn();
+			else
+				gpioRelayOff();
+		}
+		if(evt->data.evt_gatt_characteristic.characteristic==gattdb_relay_state)
+		{
+			BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_send_characteristic_confirmation(evt->data.evt_gatt_procedure_completed.connection));
+			relay_value = evt->data.evt_gatt_characteristic_value.value.data;
+			displayPrintf(DISPLAY_ROW_TEMPVALUE,"Relay = %d",*relay_value);
+		}
+
+		/*gecko_cmd_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection);
 		value = evt->data.evt_gatt_characteristic_value.value.data;
-		Properties.pushbuttton = (value[0]<<0) + (value[1]<<8);
+		Properties.voc_value = (value[0]<<0) + (value[1]<<8);
 		LOG_INFO("In gatt_char_value_id VOC = %d", *value);
 		displayPrintf(DISPLAY_ROW_TEMPVALUE, "VOC = %d", *value);
 
-		/*
+
 				Properties.temperature = (value[1] << 0) + (value[2] << 8) + (value[3] << 16);
 				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_send_characteristic_confirmation(evt->data.evt_gatt_characteristic_value.connection));			// Send confirmation for the indication
 				uint32_t temp;
@@ -355,6 +339,7 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 			displayPrintf(DISPLAY_ROW_ACTION, "%s", " ");
 			displayPrintf(DISPLAY_ROW_PASSKEY, "%s", " ");
 			State = scanning;
+			bonding=false;
 		}
 		break;
 
@@ -376,4 +361,98 @@ void handler_ble_event(struct gecko_cmd_packet *evt)
 	default:
 		break;
 	}
+}
+
+//Below State machine code is referenced from following github page
+//Link: https://github.com/CU-ECEN-5823/ecen5823-courseproject-chth2844/blob/main/servercode/src/ble.c
+State_char_t curr_state;
+State_char_t new_state = service_1_discover;
+uint8_t r_flag=0,v_flag=0;
+void handle_ble_event_2(struct gecko_cmd_packet *event)
+{
+	if(bonding==true)
+	{
+		curr_state = new_state;
+		switch(curr_state)
+		{
+		case service_1_discover:
+			new_state = service_1_discover;
+			if(BGLIB_MSG_ID(event->header)== gecko_evt_sm_bonded_id || BGLIB_MSG_ID(event->header) == gecko_evt_gatt_procedure_completed_id)
+			{
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(cli_connection,16,relay_stateService));
+				v_flag=0;
+				new_state = char_1_discover;
+			}
+			break;
+		case char_1_discover:
+			new_state = char_1_discover;
+			if (BGLIB_MSG_ID(event->header) == gecko_evt_gatt_procedure_completed_id)
+			{
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_characteristics_by_uuid(event->data.evt_gatt_procedure_completed.connection,Properties.relay_stateServiceHandle,16,relay_stateChar));
+				new_state=service_2_discover;
+			}
+			break;
+		case char_1_notify:
+			new_state = char_1_notify;
+			if (BGLIB_MSG_ID(event->header) == gecko_evt_gatt_procedure_completed_id)
+			{
+				r_flag=1;
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_set_characteristic_notification(event->data.evt_gatt_procedure_completed.connection,Properties.relay_stateCharacteristicHandle,gatt_indication));
+				new_state=char_1_read;
+			}
+			break;
+		case char_1_read:
+			new_state = char_1_read;
+			if (BGLIB_MSG_ID(event->header) == gecko_evt_gatt_procedure_completed_id)
+			{
+				r_flag=1;
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_read_characteristic_value_by_uuid(cli_connection,Properties.relay_stateServiceHandle,16,relay_stateChar));
+				new_state=last_state;
+			}
+			break;
+
+		case service_2_discover:
+			new_state = service_2_discover;
+			if (BGLIB_MSG_ID(event->header) == gecko_evt_gatt_procedure_completed_id)
+			{
+				r_flag=0;
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_primary_services_by_uuid(cli_connection,16,voc_valueService));
+				new_state = char_2_discover;
+			}
+			break;
+		case char_2_discover:
+			new_state = char_2_discover;
+			if (BGLIB_MSG_ID(event->header) == gecko_evt_gatt_procedure_completed_id)
+			{
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_discover_characteristics_by_uuid(event->data.evt_gatt_procedure_completed.connection,Properties.voc_valueServiceHandle,16,voc_valueChar));
+				new_state=char_1_notify;
+			}
+			break;
+
+		case char_2_notify:
+			new_state = char_2_notify;
+			if (BGLIB_MSG_ID(event->header) == gecko_evt_gatt_procedure_completed_id)
+			{
+				v_flag=1;
+				BTSTACK_CHECK_RESPONSE(gecko_cmd_gatt_set_characteristic_notification(event->data.evt_gatt_procedure_completed.connection,Properties.voc_valueCharacteristicHandle,gatt_indication));
+				new_state = last_state;
+			}
+			break;
+
+		case last_state:
+			new_state = last_state; // default
+			if(r_flag==1){
+				TimerWaitUs(2000000);
+				r_flag=0;
+				new_state=char_2_notify;
+			}
+			if(v_flag==1){
+				TimerWaitUs(2000000);
+				new_state=char_1_notify;
+			}
+			break;
+
+		}
+	}
+
 }

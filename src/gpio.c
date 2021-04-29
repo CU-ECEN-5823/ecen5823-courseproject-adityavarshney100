@@ -13,42 +13,21 @@
 
 void gpioInit()
 {
-	GPIO_DriveStrengthSet(Temperature_port, gpioDriveStrengthWeakAlternateWeak);
-	GPIO_PinModeSet(Temperature_port, Temperature_pin, gpioModePushPull, false);
+
 	GPIO_PinModeSet(PB0_port, PB0_pin, gpioModeInput, true);
-	GPIO_PinModeSet(PB1_port, PB1_pin, gpioModeInput, true);
 	GPIO_PinModeSet(gpioPortC,10,gpioModeWiredAndPullUpFilter,1);
 	GPIO_PinModeSet(gpioPortC,11,gpioModeWiredAndPullUpFilter,1);
+	GPIO_PinModeSet(Relay_port,Relay_pin,gpioModePushPull,false);
 }
 
-void gpioLed0SetOn()
+void gpioRelayOn()
 {
-	GPIO_PinOutSet(LED0_port,LED0_pin);
+	GPIO_PinOutSet(Relay_port,Relay_pin);
 }
 
-void gpioLed0SetOff()
+void gpioRelayOff()
 {
-	GPIO_PinOutClear(LED0_port,LED0_pin);
-}
-
-void gpioLed1SetOn()
-{
-	GPIO_PinOutSet(LED1_port,LED1_pin);
-}
-
-void gpioLed1SetOff()
-{
-	GPIO_PinOutClear(LED1_port,LED1_pin);
-}
-
-void TempSensorSetOn()
-{
-	GPIO_PinOutSet(Temperature_port,Temperature_pin);
-}
-
-void TempSensorSetOff()
-{
-	GPIO_PinOutClear(Temperature_port,Temperature_pin);
+	GPIO_PinOutClear(Relay_port,Relay_pin);
 }
 
 void gpioI2cSDADisable()

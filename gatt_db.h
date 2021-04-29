@@ -18,12 +18,8 @@ extern const struct bg_gattdb_def bg_gattdb_data;
 #define gattdb_client_support_features          8
 #define gattdb_aditya_varshney                 11
 #define gattdb_ota_control                     23
-#define gattdb_temperature_measurement         26
-#define gattdb_temperature_type                29
-#define gattdb_intermediate_temperature         31
-#define gattdb_measurement_interval            34
-#define gattdb_valid_range                     36
-#define gattdb_button_state                    39
-#define gattdb_tx_power_level                  43
+#define gattdb_tx_power_level                  26
+#define gattdb_voc_value                       29
+#define gattdb_relay_state                     34
 
 #endif
