@@ -2,7 +2,7 @@
  * timers.c
  *
  *  Created on: 05-Feb-2021
- *      Author: aditya.vny95
+ *  Author: Aditya Varshney and Pankaj Solanki
  */
 
 

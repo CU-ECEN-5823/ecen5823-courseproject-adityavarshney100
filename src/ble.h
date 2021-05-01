@@ -2,7 +2,7 @@
  * ble.h
  *
  *  Created on: 26-Feb-2021
- *      Author: aditya.vny95
+ *  Author: Aditya Varshney and Pankaj Solanki
  */
 
 #ifndef SRC_BLE_H_

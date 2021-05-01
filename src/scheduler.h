@@ -2,7 +2,7 @@
  * scheduler.h
  *
  *  Created on: 12-Feb-2021
- *      Author: aditya.vny95
+ *  Author: Aditya Varshney and Pankaj Solanki
  */
 
 #ifndef SRC_SCHEDULER_H_
